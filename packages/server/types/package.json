@@ -1,0 +1,34 @@
+{
+  "name": "@repo/types",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "lint": "eslint src --ext .ts"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.15.3",
+    "eslint": "^9.39.1",
+    "prettier": "^3.7.4",
+    "tsdown": "^0.20.3",
+    "typescript": "5.9.3"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^11.0.1",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2"
+  },
+  "exports": {
+    "./api": "./dist/api.mjs",
+    "./domain": "./dist/domain.mjs",
+    "./enums": "./dist/enums.mjs",
+    "./events": "./dist/events.mjs",
+    "./interfaces": "./dist/interfaces.mjs",
+    "./package.json": "./package.json"
+  }
+}
