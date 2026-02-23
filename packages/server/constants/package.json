@@ -1,0 +1,22 @@
+{
+  "name": "@repo/constants",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "lint": "eslint src --ext .ts"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "^24.10.0",
+    "tsdown": "^0.20.3"
+  },
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./queues": "./dist/queues.mjs",
+    "./package.json": "./package.json"
+  }
+}

@@ -1,0 +1,16 @@
+// Main schema file - datasource and generator configuration
+// Multi-schema approach for DDD bounded contexts
+
+generator client {
+  provider   = "prisma-client-js"
+  output     = "../../generated/prisma"
+  engineType = "library"
+
+  previewFeatures = ["relationJoins", "views", "schemaEngineDriverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  // All schemas used in the database - one per bounded context
+  schemas  = ["users", "payments", "notifications", "files", "audit", "events", "search"]
+}

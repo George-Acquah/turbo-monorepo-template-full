@@ -12,7 +12,7 @@
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/express": "^5.0.0",
-    "@types/node": "^22.15.3",
+    "@types/node": "^24.10.0",
     "eslint": "^9.39.1",
     "prettier": "^3.7.4",
     "tsdown": "^0.20.3",
@@ -24,10 +24,11 @@
     "class-validator": "^0.14.2"
   },
   "exports": {
-    "./api": "./dist/api.mjs",
+    ".": "./dist/index.mjs",
     "./domain": "./dist/domain.mjs",
     "./enums": "./dist/enums.mjs",
     "./events": "./dist/events.mjs",
+    "./express": "./dist/express.mjs",
     "./interfaces": "./dist/interfaces.mjs",
     "./package.json": "./package.json"
   }

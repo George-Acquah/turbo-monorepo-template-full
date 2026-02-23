@@ -1,0 +1,229 @@
+// packages/database/prisma/schema/audit.prisma
+// Audit Bounded Context - Audit logging and system activity tracking
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AuditLog - General audit log for tracking entity changes
+// ─────────────────────────────────────────────────────────────────────────────
+model AuditLog {
+  id String @id
+
+  // Entity info
+  entityType String
+  entityId   String          @map("entity_id")
+
+  // Action info
+  action String
+
+  // Actor info
+  actorId    String? @map("actor_id")
+  actorEmail String? @map("actor_email")
+  actorRole  String? @map("actor_role")
+  actorType  String? @map("actor_type") // "user", "system", "api"
+
+  // Change details
+  oldValues     Json?    @map("old_values") @db.JsonB
+  newValues     Json?    @map("new_values") @db.JsonB
+  changedFields String[] @map("changed_fields")
+
+  // Context
+  ipAddress String? @map("ip_address")
+  userAgent String? @map("user_agent")
+  requestId String? @map("request_id") // Correlation ID
+
+  // Additional context
+  description String?
+  metadata    Json?   @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([requestId])
+  @@map("audit_logs")
+  @@schema("audit")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SystemEvent - System-level events and background job tracking
+// ─────────────────────────────────────────────────────────────────────────────
+model SystemEvent {
+  id String @id
+
+  // Event info
+  eventType String @map("event_type")
+  eventName String @map("event_name")
+
+  // Source
+  source String // e.g., "scheduler", "webhook", "api", "worker"
+
+  // Related entity
+  entityType String? @map("entity_type")
+  entityId   String? @map("entity_id")
+
+  // Event data
+  payload Json? @db.JsonB
+  result  Json? @db.JsonB
+
+  // Status
+  status String @default("completed") // "started", "completed", "failed"
+
+  // Error info
+  errorCode    String? @map("error_code")
+  errorMessage String? @map("error_message")
+  errorStack   String? @map("error_stack")
+
+  // Duration
+  startedAt   DateTime  @map("started_at") @db.Timestamptz(6)
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  durationMs  Int?      @map("duration_ms")
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([eventType, eventName])
+  @@index([source])
+  @@index([entityType, entityId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("system_events")
+  @@schema("audit")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ApiLog - API request/response logging
+// ─────────────────────────────────────────────────────────────────────────────
+model ApiLog {
+  id String @id
+
+  // Request info
+  method  String
+  path    String
+  query   Json?  @db.JsonB
+  body    Json?  @db.JsonB
+  headers Json?  @db.JsonB
+
+  // Response info
+  statusCode   Int   @map("status_code")
+  responseBody Json? @map("response_body") @db.JsonB
+
+  // Actor info
+  userId String? @map("user_id")
+
+  // Context
+  ipAddress String? @map("ip_address")
+  userAgent String? @map("user_agent")
+  requestId String? @map("request_id")
+
+  // Performance
+  durationMs Int @map("duration_ms")
+
+  // Error info
+  errorCode    String? @map("error_code")
+  errorMessage String? @map("error_message")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([method, path])
+  @@index([userId])
+  @@index([statusCode])
+  @@index([createdAt])
+  @@index([requestId])
+  @@map("api_logs")
+  @@schema("audit")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// JobLog - Background job execution logging
+// ─────────────────────────────────────────────────────────────────────────────
+model JobLog {
+  id String @id
+
+  // Job info
+  jobName String  @map("job_name")
+  jobId   String? @map("job_id") // Queue job ID
+  queue   String?
+
+  // Execution info
+  status String @default("queued") // "queued", "running", "completed", "failed", "retrying"
+
+  // Input/output
+  input  Json? @db.JsonB
+  output Json? @db.JsonB
+
+  // Timing
+  scheduledAt DateTime? @map("scheduled_at") @db.Timestamptz(6)
+  startedAt   DateTime? @map("started_at") @db.Timestamptz(6)
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  durationMs  Int?      @map("duration_ms")
+
+  // Retry info
+  attempt     Int       @default(1)
+  maxAttempts Int       @default(3) @map("max_attempts")
+  nextRetryAt DateTime? @map("next_retry_at") @db.Timestamptz(6)
+
+  // Error info
+  errorCode    String? @map("error_code")
+  errorMessage String? @map("error_message")
+  errorStack   String? @map("error_stack")
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([jobName])
+  @@index([queue])
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([createdAt])
+  @@map("job_logs")
+  @@schema("audit")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LoginAttempt - Track login attempts for security
+// ─────────────────────────────────────────────────────────────────────────────
+model LoginAttempt {
+  id String @id
+
+  // Identity
+  email  String?
+  phone  String?
+  userId String? @map("user_id")
+
+  // Result
+  isSuccessful  Boolean @map("is_successful")
+  failureReason String? @map("failure_reason")
+
+  // Context
+  ipAddress String  @map("ip_address")
+  userAgent String? @map("user_agent")
+  location  Json?   @db.JsonB // Geo info
+
+  // Device fingerprint
+  deviceFingerprint String? @map("device_fingerprint")
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([email])
+  @@index([phone])
+  @@index([userId])
+  @@index([ipAddress])
+  @@index([isSuccessful])
+  @@index([createdAt])
+  @@map("login_attempts")
+  @@schema("audit")
+}

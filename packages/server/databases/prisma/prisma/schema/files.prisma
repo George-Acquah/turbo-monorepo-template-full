@@ -1,0 +1,148 @@
+// packages/database/prisma/schema/files.prisma
+// Files Bounded Context - File storage, uploads, and metadata management
+
+// ─────────────────────────────────────────────────────────────────────────────
+// File - Core file entity for Supabase Storage integration
+// ─────────────────────────────────────────────────────────────────────────────
+model File {
+  id String @id
+
+  // Storage information
+  bucket FileBucket
+  key    String // Storage path/key
+  url    String // Public or signed URL
+  cdnUrl String?    @map("cdn_url") // CDN URL if available
+
+  // File metadata
+  fileName   String         @map("file_name")
+  fileType   FileType       @map("file_type")
+  mimeType   String         @map("mime_type")
+  size       Int // Size in bytes
+  visibility FileVisibility @default(PUBLIC)
+
+  // Image-specific metadata
+  width    Int?
+  height   Int?
+  blurhash String? // Blurhash for image placeholders
+
+  // Uploader information (cross-schema reference by ID)
+  uploadedById String? @map("uploaded_by_id")
+
+  // Entity association (polymorphic-like pattern)
+  entityType String? @map("entity_type") // e.g., "product", "batch", "user"
+  entityId   String? @map("entity_id")
+
+  // Ordering for galleries
+  sortOrder Int @default(0) @map("sort_order")
+
+  // Additional metadata
+  alt      String? // Alt text for images
+  caption  String? // Caption for images
+  metadata Json?   @db.JsonB
+
+  // Processing status
+  isProcessed Boolean   @default(false) @map("is_processed")
+  processedAt DateTime? @map("processed_at") @db.Timestamptz(6)
+
+  // Timestamps
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@unique([bucket, key])
+  @@index([bucket])
+  @@index([uploadedById])
+  @@index([entityType, entityId])
+  @@index([fileType])
+  @@index([createdAt])
+  @@map("files")
+  @@schema("files")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FileUpload - Track upload requests and signed URLs
+// ─────────────────────────────────────────────────────────────────────────────
+model FileUpload {
+  id String @id
+
+  // Upload request info
+  bucket   FileBucket
+  key      String
+  fileName String     @map("file_name")
+  mimeType String     @map("mime_type")
+  size     Int? // Expected size
+
+  // Signed URL info
+  signedUrl String   @map("signed_url")
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+
+  // Upload status
+  isCompleted Boolean   @default(false) @map("is_completed")
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  fileId      String?   @map("file_id") // Reference to created File
+
+  // Uploader
+  uploadedById String? @map("uploaded_by_id")
+
+  // Entity association
+  entityType String? @map("entity_type")
+  entityId   String? @map("entity_id")
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([bucket, key])
+  @@index([uploadedById])
+  @@index([expiresAt])
+  @@index([isCompleted])
+  @@map("file_uploads")
+  @@schema("files")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ProductImage - Junction table for Product-File relationship
+// Used for cross-schema reference without direct foreign keys
+// ─────────────────────────────────────────────────────────────────────────────
+// model ProductImage {
+//   id        String @id @default(uuid()) @db.Uuid
+//   productId String @map("product_id") @db.Uuid
+//   fileId    String @map("file_id") @db.Uuid
+
+//   // Image role
+//   isPrimary Boolean @default(false) @map("is_primary")
+//   sortOrder Int     @default(0) @map("sort_order")
+
+//   // Timestamps
+//   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+//   @@unique([productId, fileId])
+//   @@index([productId])
+//   @@index([fileId])
+//   @@map("product_images")
+//   @@schema("files")
+// }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BatchImage - Junction table for Batch-File relationship
+// ─────────────────────────────────────────────────────────────────────────────
+model BatchImage {
+  id      String @id
+  batchId String @map("batch_id")
+  fileId  String @map("file_id")
+
+  // Image role
+  isBanner  Boolean @default(false) @map("is_banner")
+  sortOrder Int     @default(0) @map("sort_order")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([batchId, fileId])
+  @@index([batchId])
+  @@index([fileId])
+  @@map("batch_images")
+  @@schema("files")
+}

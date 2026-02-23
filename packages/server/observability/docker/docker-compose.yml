@@ -1,0 +1,59 @@
+services:
+  prometheus:
+    image: prom/prometheus:v2.42.0
+    container_name: prometheus
+    ports:
+      - '9091:9090' # Prometheus UI (changed host port to avoid conflict)
+    volumes:
+      - ../../../prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - monitoring
+    restart: always
+
+  grafana:
+    image: grafana/grafana:8.5.0
+    container_name: grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: 'admin' # Set Grafana admin password
+    ports:
+      - '7003:3000' # Grafana UI (host 7003 -> container 3000)
+    volumes:
+      - ../../../grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ../../../grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - monitoring
+    depends_on:
+      - prometheus
+      - loki
+    restart: always
+
+  loki:
+    image: grafana/loki:2.8.0
+    container_name: repo-loki
+    ports:
+      - '3101:3100'
+    volumes:
+      - ../../../loki-config.yml:/etc/loki/local-config.yaml
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - monitoring
+    restart: always
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: repo-postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: 'postgresql://devuser:devpassword@172.17.0.1:5432/template_db?sslmode=disable'
+    ports:
+      - '9187:9187'
+    networks:
+      - monitoring
+    restart: always
+
+volumes:
+  loki-data:
+
+networks:
+  monitoring:
+    driver: bridge

@@ -6,3 +6,4 @@
 
 // Domain event base types
 export * from './domain-event.types';
+export * from './email-event.types';

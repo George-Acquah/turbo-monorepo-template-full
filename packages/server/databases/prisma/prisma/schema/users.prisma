@@ -1,0 +1,223 @@
+// packages/database/prisma/schema/users.prisma
+// Users Bounded Context - User management, authentication, and profiles
+
+// ─────────────────────────────────────────────────────────────────────────────
+// User - Core user entity
+// ─────────────────────────────────────────────────────────────────────────────
+model User {
+  id         String     @id
+  email      String?    @unique
+  phone      String?    @unique
+  supabaseId String?    @unique @map("supabase_id")
+  role       UserRole   @default(CUSTOMER)
+  status     UserStatus @default(PENDING_VERIFICATION)
+
+  // Profile information
+  firstName   String? @map("first_name")
+  lastName    String? @map("last_name")
+  displayName String? @map("display_name")
+  avatarUrl   String? @map("avatar_url")
+
+  // Email & phone verification
+  emailVerified   Boolean   @default(false) @map("email_verified")
+  phoneVerified   Boolean   @default(false) @map("phone_verified")
+  emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamptz(6)
+  phoneVerifiedAt DateTime? @map("phone_verified_at") @db.Timestamptz(6)
+
+  // Security
+  passwordHash     String?   @map("password_hash")
+  lastLoginAt      DateTime? @map("last_login_at") @db.Timestamptz(6)
+  lastLoginIp      String?   @map("last_login_ip")
+  failedLoginCount Int       @default(0) @map("failed_login_count")
+  lockedUntil      DateTime? @map("locked_until") @db.Timestamptz(6)
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  supabaseCreatedAt DateTime? @map("supabase_created_at") @db.Timestamptz(6)
+  supabaseUpdatedAt DateTime? @map("supabase_updated_at") @db.Timestamptz(6)
+  supabaseDeletedAt DateTime? @map("supabase_deleted_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  // Relations
+  addresses     Address[]
+  authProviders UserAuthProvider[]
+  preferences   UserPreference?
+  sessions      UserSession[]
+
+  @@index([email])
+  @@index([phone])
+  @@index([supabaseId])
+  @@index([role, status])
+  @@index([createdAt])
+  @@map("users")
+  @@schema("users")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Address - User shipping/billing addresses
+// ─────────────────────────────────────────────────────────────────────────────
+model Address {
+  id     String @id
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  label        String? // e.g., "Home", "Office"
+  fullName     String  @map("full_name")
+  addressLine1 String  @map("address_line_1")
+  addressLine2 String? @map("address_line_2")
+  city         String
+  region       String?
+  postalCode   String? @map("postal_code")
+  country      String  @default("GH")
+  phone        String?
+
+  // Address type flags
+  isDefault         Boolean @default(false) @map("is_default")
+  isShippingDefault Boolean @default(false) @map("is_shipping_default")
+  isBillingDefault  Boolean @default(false) @map("is_billing_default")
+
+  // GPS coordinates (for delivery)
+  latitude  Decimal? @db.Decimal(10, 8)
+  longitude Decimal? @db.Decimal(11, 8)
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@index([userId])
+  @@index([userId, isDefault])
+  @@map("addresses")
+  @@schema("users")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UserAuthProvider - OAuth/social login providers
+// ─────────────────────────────────────────────────────────────────────────────
+model UserAuthProvider {
+  id         String       @id
+  userId     String       @map("user_id")
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider   AuthProvider
+  providerId String       @map("provider_id")
+
+  // Provider-specific data
+  accessToken  String?   @map("access_token")
+  refreshToken String?   @map("refresh_token")
+  expiresAt    DateTime? @map("expires_at") @db.Timestamptz(6)
+  tokenData    Json?     @map("token_data") @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([provider, providerId])
+  @@index([userId])
+  @@map("user_auth_providers")
+  @@schema("users")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UserPreference - User settings and preferences
+// ─────────────────────────────────────────────────────────────────────────────
+model UserPreference {
+  id     String @id
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Notification preferences
+  emailNotifications Boolean @default(true) @map("email_notifications")
+  smsNotifications   Boolean @default(true) @map("sms_notifications")
+  pushNotifications  Boolean @default(true) @map("push_notifications")
+  marketingEmails    Boolean @default(false) @map("marketing_emails")
+
+  // App preferences
+  language String  @default("en")
+  currency String  @default("GHS")
+  timezone String  @default("Africa/Accra")
+  darkMode Boolean @default(false) @map("dark_mode")
+
+  // Additional preferences
+  preferences Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("user_preferences")
+  @@schema("users")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UserSession - Active user sessions for security tracking
+// ─────────────────────────────────────────────────────────────────────────────
+model UserSession {
+  id     String @id
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  token      String  @unique
+  deviceInfo String? @map("device_info")
+  ipAddress  String? @map("ip_address")
+  userAgent  String? @map("user_agent")
+
+  expiresAt    DateTime  @map("expires_at") @db.Timestamptz(6)
+  lastActiveAt DateTime? @map("last_active_at") @db.Timestamptz(6)
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("user_sessions")
+  @@schema("users")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PasswordResetToken - Password reset tokens
+// ─────────────────────────────────────────────────────────────────────────────
+model PasswordResetToken {
+  id        String    @id
+  userId    String    @map("user_id")
+  token     String    @unique
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+  @@schema("users")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EmailVerificationToken - Email verification tokens
+// ─────────────────────────────────────────────────────────────────────────────
+model EmailVerificationToken {
+  id        String    @id
+  userId    String    @map("user_id")
+  email     String
+  token     String    @unique
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("email_verification_tokens")
+  @@schema("users")
+}

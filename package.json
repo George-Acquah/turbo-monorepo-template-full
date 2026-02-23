@@ -11,7 +11,8 @@
   "devDependencies": {
     "prettier": "^3.7.4",
     "turbo": "^2.8.10",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "globals": "^16.5.0"
   },
   "packageManager": "pnpm@10.17.1",
   "engines": {

@@ -1,0 +1,223 @@
+// packages/database/prisma/schema/events.prisma
+// Event-driven Architecture - Transactional Outbox, Sagas, and Dead Letter Queue
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OutboxEvent - Transactional Outbox Pattern for reliable event publishing
+// ─────────────────────────────────────────────────────────────────────────────
+model OutboxEvent {
+    id String @id
+
+    // Event identification
+    eventType     String @map("event_type")
+    aggregateType String @map("aggregate_type")
+    aggregateId   String @map("aggregate_id")
+
+    // Event payload
+    payload  Json  @db.JsonB
+    metadata Json? @db.JsonB
+
+    // Versioning for event schema evolution
+    version Int @default(1)
+
+    // Tracing
+    correlationId String? @map("correlation_id")
+    causationId   String? @map("causation_id")
+
+    // Processing status
+    status OutboxEventStatus @default(PENDING)
+
+    // Retry tracking
+    attempts    Int       @default(0)
+    maxAttempts Int       @default(5) @map("max_attempts")
+    nextRetryAt DateTime? @map("next_retry_at") @db.Timestamptz(6)
+    lastError   String?   @map("last_error")
+
+    // Processing timestamps
+    processedAt DateTime? @map("processed_at") @db.Timestamptz(6)
+    failedAt    DateTime? @map("failed_at") @db.Timestamptz(6)
+
+    // Timestamps
+    createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+    updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+    @@index([status])
+    @@index([eventType])
+    @@index([aggregateType, aggregateId])
+    @@index([createdAt])
+    @@index([nextRetryAt])
+    @@index([correlationId])
+    @@map("outbox_events")
+    @@schema("events")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DeadLetterQueue - Failed events for manual inspection/retry
+// ─────────────────────────────────────────────────────────────────────────────
+model DeadLetterEvent {
+    id String @id
+
+    // Original event reference
+    originalEventId String? @map("original_event_id")
+    eventType       String  @map("event_type")
+    aggregateType   String  @map("aggregate_type")
+    aggregateId     String  @map("aggregate_id")
+
+    // Payload
+    payload  Json  @db.JsonB
+    metadata Json? @db.JsonB
+
+    // Error information
+    errorType    String  @map("error_type")
+    errorMessage String  @map("error_message")
+    errorStack   String? @map("error_stack")
+
+    // Tracing
+    correlationId String? @map("correlation_id")
+
+    // Processing attempts before DLQ
+    totalAttempts Int @map("total_attempts")
+
+    // Resolution
+    status          DLQEventStatus @default(UNRESOLVED)
+    resolvedAt      DateTime?      @map("resolved_at") @db.Timestamptz(6)
+    resolvedById    String?        @map("resolved_by_id")
+    resolutionNotes String?        @map("resolution_notes")
+
+    // Timestamps
+    createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+    updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+    @@index([status])
+    @@index([eventType])
+    @@index([createdAt])
+    @@index([aggregateType, aggregateId])
+    @@map("dead_letter_events")
+    @@schema("events")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SagaState - Saga/Orchestration State for distributed transactions
+// ─────────────────────────────────────────────────────────────────────────────
+model SagaState {
+    id String @id
+
+    // Saga identification
+    sagaType      String @map("saga_type") // e.g., "OrderPaymentSaga"
+    correlationId String @unique @map("correlation_id")
+
+    // State
+    currentStep String     @map("current_step")
+    status      SagaStatus @default(STARTED)
+
+    // Data persisted across steps
+    data Json @db.JsonB
+
+    // Related entities
+    orderId   String? @map("order_id")
+    paymentId String? @map("payment_id")
+    userId    String? @map("user_id")
+
+    // Compensation tracking
+    completedSteps String[] @map("completed_steps")
+    failedStep     String?  @map("failed_step")
+    compensating   Boolean  @default(false)
+
+    // Error information
+    lastError String? @map("last_error")
+
+    // Timeout
+    timeoutAt DateTime? @map("timeout_at") @db.Timestamptz(6)
+
+    // Timestamps
+    startedAt   DateTime  @default(now()) @map("started_at") @db.Timestamptz(6)
+    completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+    updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+    @@index([sagaType])
+    @@index([status])
+    @@index([orderId])
+    @@index([paymentId])
+    @@index([timeoutAt])
+    @@index([startedAt])
+    @@map("saga_states")
+    @@schema("events")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// IdempotencyKey - Track processed operations for idempotency
+// ─────────────────────────────────────────────────────────────────────────────
+model IdempotencyKey {
+    id String @id
+
+    // Key identification
+    key   String
+    scope String // e.g., "payment", "order", "webhook"
+
+    // Request/Response caching
+    requestHash  String? @map("request_hash")
+    responseData Json?   @map("response_data") @db.JsonB
+    statusCode   Int?    @map("status_code")
+
+    // Status
+    status IdempotencyStatus @default(IN_PROGRESS)
+
+    // Related entity (optional)
+    entityType String? @map("entity_type")
+    entityId   String? @map("entity_id")
+
+    // Expiration (idempotency keys should expire)
+    expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+
+    // Timestamps
+    createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+    completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+
+    @@unique([scope, key])
+    @@index([key])
+    @@index([scope, key])
+    @@index([expiresAt])
+    @@index([status])
+    @@map("idempotency_keys")
+    @@schema("events")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enums for Event Infrastructure
+// ─────────────────────────────────────────────────────────────────────────────
+enum OutboxEventStatus {
+    PENDING
+    PROCESSING
+    PROCESSED
+    FAILED
+    DEAD_LETTERED
+
+    @@schema("events")
+}
+
+enum DLQEventStatus {
+    UNRESOLVED
+    RETRYING
+    RESOLVED
+    IGNORED
+
+    @@schema("events")
+}
+
+enum SagaStatus {
+    STARTED
+    IN_PROGRESS
+    COMPLETED
+    COMPENSATING
+    COMPENSATED
+    FAILED
+
+    @@schema("events")
+}
+
+enum IdempotencyStatus {
+    IN_PROGRESS
+    COMPLETED
+    FAILED
+
+    @@schema("events")
+}

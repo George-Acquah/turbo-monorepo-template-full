@@ -1,0 +1,193 @@
+// packages/database/prisma/schema/search.prisma
+// Full-text Search Infrastructure - Search indexes and materialized views
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SearchDocument - Unified search index for full-text search across entities
+// Denormalized for fast search queries (SHEIN-style homepage search)
+// ─────────────────────────────────────────────────────────────────────────────
+model SearchDocument {
+    id String @id
+
+    // Entity reference
+    entityType SearchEntityType @map("entity_type")
+    entityId   String           @map("entity_id")
+
+    // Searchable content (indexed with GIN)
+    title       String
+    description String?
+    content     String? // Additional searchable content
+    tags        String[] // Tags/keywords for filtering
+
+    // For tsvector full-text search (computed column handled by trigger)
+    searchVector Unsupported("tsvector")? @map("search_vector")
+
+    // Categorization for faceted search
+    categoryIds   String[] @map("category_ids")
+    collectionIds String[] @map("collection_ids")
+    brandId       String?  @map("brand_id")
+
+    // Pricing (for price range filters)
+    price          Int?
+    compareAtPrice Int?   @map("compare_at_price")
+    currency       String @default("GHS")
+
+    // Ratings (for sorting/filtering)
+    rating      Decimal? @db.Decimal(3, 2)
+    reviewCount Int      @default(0) @map("review_count")
+
+    // Inventory status
+    inStock  Boolean @default(true) @map("in_stock")
+    quantity Int     @default(0)
+
+    // Popularity metrics (for ranking)
+    viewCount     Int @default(0) @map("view_count")
+    salesCount    Int @default(0) @map("sales_count")
+    wishlistCount Int @default(0) @map("wishlist_count")
+
+    // Promotions
+    isOnSale     Boolean @default(false) @map("is_on_sale")
+    isFeatured   Boolean @default(false) @map("is_featured")
+    isNewArrival Boolean @default(false) @map("is_new_arrival")
+    flashSaleId  String? @map("flash_sale_id")
+
+    // Image for display
+    imageUrl     String? @map("image_url")
+    thumbnailUrl String? @map("thumbnail_url")
+
+    // Slug for URL
+    slug String?
+
+    // Status
+    isActive Boolean @default(true) @map("is_active")
+
+    // Boost factor for ranking
+    boost Decimal @default(1.0) @db.Decimal(5, 2)
+
+    // Metadata
+    metadata Json? @db.JsonB
+
+    // Timestamps
+    createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+    updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+    indexedAt DateTime @default(now()) @map("indexed_at") @db.Timestamptz(6)
+
+    @@unique([entityType, entityId])
+    @@index([entityType])
+    @@index([isActive])
+    @@index([inStock])
+    @@index([price])
+    @@index([rating])
+    @@index([salesCount])
+    @@index([isFeatured])
+    @@index([isOnSale])
+    @@index([createdAt])
+    @@index([categoryIds], type: Gin)
+    @@index([collectionIds], type: Gin)
+    @@index([tags], type: Gin)
+    @@map("search_documents")
+    @@schema("search")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SearchSynonym - Synonyms for search query expansion
+// ─────────────────────────────────────────────────────────────────────────────
+model SearchSynonym {
+    id String @id
+
+    // Primary term
+    term String @unique
+
+    // Synonyms
+    synonyms String[]
+
+    // Is this a two-way synonym or one-way
+    bidirectional Boolean @default(true)
+
+    // Active
+    isActive Boolean @default(true) @map("is_active")
+
+    // Timestamps
+    createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+    updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+    @@index([term])
+    @@index([isActive])
+    @@map("search_synonyms")
+    @@schema("search")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SearchQuery - Track search queries for analytics and autocomplete
+// ─────────────────────────────────────────────────────────────────────────────
+model SearchQuery {
+    id String @id
+
+    // Query
+    query           String
+    normalizedQuery String @map("normalized_query")
+
+    // User info
+    userId    String? @map("user_id")
+    sessionId String? @map("session_id")
+
+    // Results
+    resultCount Int      @map("result_count")
+    clickedIds  String[] @map("clicked_ids")
+
+    // Filters applied
+    filters Json? @db.JsonB
+
+    // Timestamps
+    createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+    @@index([normalizedQuery])
+    @@index([userId])
+    @@index([createdAt])
+    @@map("search_queries")
+    @@schema("search")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PopularSearch - Aggregated popular searches for suggestions
+// ─────────────────────────────────────────────────────────────────────────────
+model PopularSearch {
+    id String @id
+
+    // Query
+    query String @unique
+
+    // Metrics
+    searchCount     Int @default(1) @map("search_count")
+    clickCount      Int @default(0) @map("click_count")
+    conversionCount Int @default(0) @map("conversion_count")
+
+    // Score for ranking (computed from metrics)
+    score Decimal @default(0) @db.Decimal(10, 2)
+
+    // Display
+    displayText String? @map("display_text")
+
+    // Active
+    isActive Boolean @default(true) @map("is_active")
+
+    // Timestamps
+    lastSearchedAt DateTime @default(now()) @map("last_searched_at") @db.Timestamptz(6)
+    updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+    @@index([isActive, score(sort: Desc)])
+    @@index([searchCount])
+    @@map("popular_searches")
+    @@schema("search")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enum for Search Entity Types
+// ─────────────────────────────────────────────────────────────────────────────
+enum SearchEntityType {
+    PRODUCT
+    COLLECTION
+    CATEGORY
+    BRAND
+
+    @@schema("search")
+}

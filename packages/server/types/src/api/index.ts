@@ -3,5 +3,6 @@ export type {
   ApiSuccessResponse,
   ApiErrorResponse,
   ApiResponseShape,
+  ApiErrorItem,
   ApiMeta,
 } from './api.response';

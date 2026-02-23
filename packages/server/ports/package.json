@@ -1,0 +1,29 @@
+{
+  "name": "@repo/ports",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@repo/types": "workspace:*",
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "^24.10.0",
+    "tsdown": "^0.20.3"
+  },
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./audit": "./dist/audit.mjs",
+    "./database": "./dist/database.mjs",
+    "./email": "./dist/email.mjs",
+    "./events": "./dist/events.mjs",
+    "./http": "./dist/http.mjs",
+    "./payments": "./dist/payments.mjs",
+    "./shared": "./dist/shared.mjs",
+    "./package.json": "./package.json"
+  }
+}

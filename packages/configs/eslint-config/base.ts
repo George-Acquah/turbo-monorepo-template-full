@@ -102,4 +102,17 @@ export const config = [
       ],
     },
   },
+
+  {
+    // This matches if path contains 'ports' or is within the ports package
+    files: [
+      '**/packages/server/ports/**/*.ts',
+      '**/ports/src/**/*.ts',
+      // 'src/**/*.ts', // This matches when running from inside the ports package
+    ],
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'off',
+      'no-unused-vars': 'off',
+    },
+  },
 ] as Linter.Config[];

@@ -3,3 +3,4 @@ packages:
   - "packages/configs/*"
   - "packages/client/*"
   - "packages/server/*"
+  - "packages/server/databases/*"

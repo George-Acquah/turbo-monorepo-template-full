@@ -149,6 +149,17 @@ export class ApiResponse<T> implements IApiResponse<T> {
     return this.create<T>(HttpStatus.CREATED, data, { ...opts, message });
   }
 
+  static notFound(
+    message = 'Resource not found on the server',
+    opts?: ErrorOpts & { error?: string },
+  ) {
+    return this.create<null>(HttpStatus.NOT_FOUND, null, {
+      ...opts,
+      message,
+      error: opts?.error ?? 'Not Found',
+    });
+  }
+
   static noContent(message = 'Request processed; no content returned', opts?: BaseOpts) {
     return this.create<null>(HttpStatus.NO_CONTENT, null, { ...opts, message });
   }

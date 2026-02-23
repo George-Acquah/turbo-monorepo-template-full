@@ -1,0 +1,177 @@
+// packages/database/prisma/schema/enums.prisma
+// Shared enums across all bounded contexts
+
+// ─────────────────────────────────────────────────────────────────────────────
+// User & Auth Enums
+// ─────────────────────────────────────────────────────────────────────────────
+enum UserRole {
+    CUSTOMER
+    ADMIN
+    SUPER_ADMIN
+
+    @@schema("users")
+}
+
+enum UserStatus {
+    ACTIVE
+    INACTIVE
+    SUSPENDED
+    PENDING_VERIFICATION
+
+    @@schema("users")
+}
+
+enum AuthProvider {
+    EMAIL
+    GOOGLE
+    FACEBOOK
+    APPLE
+    PHONE
+
+    @@schema("users")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Payment Enums
+// ─────────────────────────────────────────────────────────────────────────────
+enum PaymentStatus {
+    PENDING
+    INITIATED
+    PROCESSING
+    PAID
+    FAILED
+    CANCELLED
+    REFUNDED
+    PARTIALLY_REFUNDED
+    EXPIRED
+
+    @@schema("payments")
+}
+
+enum PaymentProvider {
+    PAYSTACK
+    FLUTTERWAVE
+    MOBILE_MONEY
+    BANK_TRANSFER
+    CASH
+
+    @@schema("payments")
+}
+
+enum PaymentMethod {
+    CARD
+    MOBILE_MONEY
+    BANK_TRANSFER
+    USSD
+    QR_CODE
+    CASH
+
+    @@schema("payments")
+}
+
+enum RefundStatus {
+    PENDING
+    PROCESSING
+    COMPLETED
+    FAILED
+    REJECTED
+
+    @@schema("payments")
+}
+
+enum WebhookEventStatus {
+    PENDING
+    PROCESSING
+    PROCESSED
+    FAILED
+    SKIPPED
+
+    @@schema("payments")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Notification Enums
+// ─────────────────────────────────────────────────────────────────────────────
+enum NotificationChannel {
+    EMAIL
+    SMS
+    PUSH
+    IN_APP
+    SLACK
+    TELEGRAM
+    WHATSAPP
+
+    @@schema("notifications")
+}
+
+enum NotificationStatus {
+    PENDING
+    QUEUED
+    SENDING
+    SENT
+    DELIVERED
+    FAILED
+    BOUNCED
+
+    @@schema("notifications")
+}
+
+enum NotificationType {
+    ORDER_CREATED
+    ORDER_CONFIRMED
+    ORDER_SHIPPED
+    ORDER_DELIVERED
+    ORDER_CANCELLED
+    PAYMENT_SUCCESS
+    PAYMENT_FAILED
+    PAYMENT_REFUNDED
+    // Shein-style notifications
+    FLASH_SALE_STARTING
+    FLASH_SALE_ENDING
+    PRICE_DROP
+    BACK_IN_STOCK
+    NEW_COLLECTION
+    REVIEW_PUBLISHED
+    QUESTION_ANSWERED
+    WISHLIST_SALE
+    // Account
+    WELCOME
+    PASSWORD_RESET
+    ACCOUNT_VERIFICATION
+    PROMOTIONAL
+
+    @@schema("notifications")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// File Enums
+// ─────────────────────────────────────────────────────────────────────────────
+enum FileType {
+    IMAGE
+    DOCUMENT
+    VIDEO
+    AUDIO
+    OTHER
+
+    @@schema("files")
+}
+
+enum FileBucket {
+    PRODUCT_IMAGES
+    COLLECTION_ASSETS
+    REVIEW_IMAGES
+    USER_AVATARS
+    INVOICES
+    RECEIPTS
+    GENERAL
+
+    @@schema("files")
+}
+
+enum FileVisibility {
+    PUBLIC
+    PRIVATE
+    SIGNED
+
+    @@schema("files")
+}

@@ -2,11 +2,12 @@ import { defineConfig } from 'tsdown';
 
 export default defineConfig({
   entry: {
-    api: 'src/api/index.ts',
+    index: 'src/index.ts',
     interfaces: 'src/interfaces/index.ts',
     enums: 'src/enums/index.ts',
     events: 'src/events/index.ts',
     domain: 'src/domain/index.ts',
+    express: 'src/express.ts',
   },
   format: ['esm'],
   dts: true,

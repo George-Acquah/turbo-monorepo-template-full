@@ -1,0 +1,329 @@
+// packages/database/prisma/schema/payments.prisma
+// Payments Bounded Context - Payment processing, webhooks, and refunds
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Payment - Payment transaction record
+// ─────────────────────────────────────────────────────────────────────────────
+model Payment {
+  id String @id
+
+  // Order reference (cross-schema)
+  orderId String @map("order_id")
+
+  // Provider info
+  provider PaymentProvider
+  method   PaymentMethod?
+
+  // Provider-specific IDs
+  providerPaymentId String? @map("provider_payment_id")
+  providerReference String? @map("provider_reference")
+  authorizationCode String? @map("authorization_code")
+
+  // Amount
+  amount   Int
+  currency String @default("GHS")
+
+  // Fees (if applicable)
+  providerFee Int? @map("provider_fee")
+  netAmount   Int? @map("net_amount")
+
+  // Status
+  status PaymentStatus @default(PENDING)
+
+  // Timestamps for status changes
+  initiatedAt  DateTime? @map("initiated_at") @db.Timestamptz(6)
+  processingAt DateTime? @map("processing_at") @db.Timestamptz(6)
+  paidAt       DateTime? @map("paid_at") @db.Timestamptz(6)
+  failedAt     DateTime? @map("failed_at") @db.Timestamptz(6)
+  cancelledAt  DateTime? @map("cancelled_at") @db.Timestamptz(6)
+  expiredAt    DateTime? @map("expired_at") @db.Timestamptz(6)
+
+  // Failure info
+  failureCode    String? @map("failure_code")
+  failureMessage String? @map("failure_message")
+
+  // Card info (masked/tokenized)
+  cardLast4    String? @map("card_last_4")
+  cardBrand    String? @map("card_brand")
+  cardExpMonth Int?    @map("card_exp_month")
+  cardExpYear  Int?    @map("card_exp_year")
+
+  // Mobile money info
+  mobileNetwork String? @map("mobile_network")
+  mobileNumber  String? @map("mobile_number") // Masked
+
+  // Bank info
+  bankName      String? @map("bank_name")
+  accountNumber String? @map("account_number") // Masked
+
+  // Customer info
+  customerEmail String? @map("customer_email")
+  customerPhone String? @map("customer_phone")
+  customerId    String? @map("customer_id")
+
+  // IP and device info (for fraud prevention)
+  ipAddress String? @map("ip_address")
+  userAgent String? @map("user_agent")
+
+  // Idempotency
+  idempotencyKey String? @unique @map("idempotency_key")
+
+  // Raw response from provider
+  rawRequest  Json? @map("raw_request") @db.JsonB
+  rawResponse Json? @map("raw_response") @db.JsonB
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  refunds  Refund[]
+  attempts PaymentAttempt[]
+
+  @@index([orderId])
+  @@index([providerPaymentId])
+  @@index([providerReference])
+  @@index([status])
+  @@index([createdAt])
+  @@index([customerId])
+  @@map("payments")
+  @@schema("payments")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PaymentAttempt - Track multiple payment attempts
+// ─────────────────────────────────────────────────────────────────────────────
+model PaymentAttempt {
+  id        String  @id
+  paymentId String  @map("payment_id")
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  // Attempt info
+  attemptNumber Int            @map("attempt_number")
+  method        PaymentMethod?
+
+  // Provider response
+  providerRef String?       @map("provider_ref")
+  status      PaymentStatus
+
+  // Failure info
+  failureCode    String? @map("failure_code")
+  failureMessage String? @map("failure_message")
+
+  // Raw response
+  rawResponse Json? @map("raw_response") @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([paymentId])
+  @@index([createdAt])
+  @@map("payment_attempts")
+  @@schema("payments")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Refund - Refund transactions
+// ─────────────────────────────────────────────────────────────────────────────
+model Refund {
+  id        String  @id
+  paymentId String  @map("payment_id")
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  // Order reference (cross-schema)
+  orderId String @map("order_id")
+
+  // Provider info
+  providerRefundId String? @map("provider_refund_id")
+
+  // Amount
+  amount   Int
+  currency String @default("GHS")
+
+  // Status
+  status RefundStatus @default(PENDING)
+
+  // Reason
+  reason        String?
+  internalNotes String? @map("internal_notes")
+
+  // Timestamps
+  requestedAt DateTime  @default(now()) @map("requested_at") @db.Timestamptz(6)
+  processedAt DateTime? @map("processed_at") @db.Timestamptz(6)
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  failedAt    DateTime? @map("failed_at") @db.Timestamptz(6)
+
+  // Failure info
+  failureCode    String? @map("failure_code")
+  failureMessage String? @map("failure_message")
+
+  // Requested by
+  requestedById String? @map("requested_by_id")
+
+  // Raw response
+  rawResponse Json? @map("raw_response") @db.JsonB
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([paymentId])
+  @@index([orderId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("refunds")
+  @@schema("payments")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WebhookEvent - Store incoming webhook events for idempotent processing
+// ─────────────────────────────────────────────────────────────────────────────
+model WebhookEvent {
+  id String @id
+
+  // Provider info
+  provider  PaymentProvider
+  eventType String          @map("event_type")
+  eventId   String?         @map("event_id") // Provider's event ID
+
+  // Payload
+  payload        Json    @db.JsonB
+  headers        Json?   @db.JsonB
+  signature      String?
+  idempotencyKey String? @unique @map("idempotency_key")
+
+  // Processing status
+  status WebhookEventStatus @default(PENDING)
+
+  // Processing info
+  processedAt     DateTime? @map("processed_at") @db.Timestamptz(6)
+  processingError String?   @map("processing_error")
+  retryCount      Int       @default(0) @map("retry_count")
+  lastRetryAt     DateTime? @map("last_retry_at") @db.Timestamptz(6)
+
+  // Related entities
+  paymentId String? @map("payment_id")
+  refundId  String? @map("refund_id")
+  orderId   String? @map("order_id")
+
+  // IP info
+  ipAddress String? @map("ip_address")
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([provider, eventId])
+  @@index([provider, eventType])
+  @@index([status])
+  @@index([createdAt])
+  @@index([paymentId])
+  @@index([orderId])
+  @@map("webhook_events")
+  @@schema("payments")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PaymentMethod - Saved payment methods for returning customers
+// ─────────────────────────────────────────────────────────────────────────────
+model SavedPaymentMethod {
+  id String @id
+
+  // User reference (cross-schema)
+  userId String @map("user_id")
+
+  // Provider info
+  provider      PaymentProvider
+  providerToken String          @map("provider_token") // Tokenized card/account
+
+  // Method type
+  type PaymentMethod
+
+  // Display info (masked)
+  displayName String @map("display_name") // e.g., "**** 4242"
+
+  // Card info
+  cardLast4    String? @map("card_last_4")
+  cardBrand    String? @map("card_brand")
+  cardExpMonth Int?    @map("card_exp_month")
+  cardExpYear  Int?    @map("card_exp_year")
+
+  // Mobile money info
+  mobileNetwork String? @map("mobile_network")
+  mobileNumber  String? @map("mobile_number") // Masked
+
+  // Bank info
+  bankName      String? @map("bank_name")
+  accountNumber String? @map("account_number") // Masked
+
+  // Preferences
+  isDefault Boolean @default(false) @map("is_default")
+
+  // Status
+  isActive  Boolean   @default(true) @map("is_active")
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz(6)
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@index([userId])
+  @@index([userId, isDefault])
+  @@index([provider])
+  @@map("saved_payment_methods")
+  @@schema("payments")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PaymentConfig - Payment provider configuration
+// ─────────────────────────────────────────────────────────────────────────────
+model PaymentConfig {
+  id String @id
+
+  provider PaymentProvider @unique
+
+  // API configuration (encrypted in practice)
+  publicKey     String? @map("public_key")
+  secretKey     String? @map("secret_key")
+  webhookSecret String? @map("webhook_secret")
+
+  // Environment
+  isLive Boolean @default(false) @map("is_live")
+
+  // Supported methods
+  supportedMethods PaymentMethod[] @map("supported_methods")
+
+  // Fees configuration
+  feePercentage Decimal? @map("fee_percentage") @db.Decimal(5, 4)
+  feeFixed      Int?     @map("fee_fixed")
+
+  // Limits
+  minAmount Int? @map("min_amount")
+  maxAmount Int? @map("max_amount")
+
+  // Status
+  isActive Boolean @default(true) @map("is_active")
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("payment_configs")
+  @@schema("payments")
+}

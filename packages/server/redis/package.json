@@ -1,0 +1,30 @@
+{
+  "name": "@repo/redis",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@repo/observability": "workspace:*",
+    "@repo/ports": "workspace:*",
+    "ioredis": "^5.8.2"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "^24.10.0",
+    "tsdown": "^0.20.3"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.2"
+  },
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  }
+}

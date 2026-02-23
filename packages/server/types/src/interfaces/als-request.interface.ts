@@ -16,12 +16,7 @@ export interface RequestContext {
   requestId: string;
 
   /** Metadata about the authentication event */
-  authMetadata?: {
-    iat: number;
-    exp: number;
-    iss?: string;
-    tokenType: 'access' | 'refresh';
-  };
+  authMetadata?: ContextAuthData;
 
   /** Authenticated user context (populated after auth guard) */
   user?: UserContext;
@@ -48,13 +43,22 @@ export interface RequestContext {
   /** User agent string */
   userAgent?: string;
 
-  /** Raw Express request (for edge cases - prefer typed fields) */
-  request?: Request;
+  /**
+   * Lazy accessor for the raw Express request.
+   * Not set by default unless you choose to.
+   */ getRequest?: () => Request;
 
   /** Request start timestamp for performance tracking */
   startTime: number;
 
   txClient?: unknown;
+}
+
+export interface ContextAuthData {
+  iat: number;
+  exp: number;
+  iss?: string;
+  tokenType: 'access' | 'refresh';
 }
 
 /**
