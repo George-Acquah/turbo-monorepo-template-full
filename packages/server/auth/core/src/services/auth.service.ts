@@ -4,6 +4,7 @@ import {
   HASH_PORT_TOKEN,
   OAuthProviderName,
   TOKEN_PORT_TOKEN,
+  type AuthUser,
   type AuthRepositoryPort,
   type HashPort,
   type TokenPort,
@@ -12,6 +13,11 @@ import { DeviceIdService } from './device-id.service';
 import * as crypto from 'crypto';
 import { AppRequest } from '@repo/types';
 import { OAuthProviderRegistry, OAuthStateService, PkceService } from './oauth';
+import {
+  OAuthAccountNotLinkedException,
+  OAuthExchangeFailedException,
+  OAuthStateInvalidException,
+} from '../constants';
 
 @Injectable()
 export class AuthService {
@@ -150,27 +156,61 @@ export class AuthService {
 
   async oauthCallback(state: string, code: string, redirectUri: string, req: AppRequest) {
     const stored = await this.oauthState.consume(state);
-    if (!stored) throw new UnauthorizedException('Invalid OAuth state');
+    if (!stored) throw new OAuthStateInvalidException();
 
-    const provider = this.oauthRegistry.get(stored.provider as OAuthProviderName);
+    const provider = this.oauthRegistry.get(stored.provider);
 
-    const profile = await provider.exchangeCode({
-      redirectUri,
-      code,
-      codeVerifier: stored.codeVerifier,
-    });
+    const profile = await provider
+      .exchangeCode({
+        redirectUri,
+        code,
+        codeVerifier: stored.codeVerifier,
+      })
+      .catch(() => {
+        throw new OAuthExchangeFailedException(stored.provider);
+      });
 
-    let user = await this.repo.findUserByProviderIdentity({
+    const identity = {
       provider: profile.provider,
       providerId: profile.providerId,
-    });
+      email: profile.email ?? null,
+    };
 
-    if (!user) {
-      // Optional: create user automatically
-      // const created = await this.repo.createUserFromOAuth(profile);
-      user = null
+    let user: AuthUser | null = null;
+
+    if (req.user?.id) {
+      await this.repo.linkProviderIdentity({
+        userId: req.user.id,
+        identity,
+      });
+      user = await this.repo.findUserById(req.user.id);
     }
 
-    return this.issueTokens(req, user!.id, user!.role);
+    if (!user) {
+      user = await this.repo.findUserByProviderIdentity(identity);
+    }
+
+    if (!user) {
+      const email = profile.email?.trim();
+      if (email) {
+        const existingByEmail = await this.repo.findUserByEmail(email);
+        if (existingByEmail) {
+          await this.repo.linkProviderIdentity({
+            userId: existingByEmail.id,
+            identity: {
+              ...identity,
+              email,
+            },
+          });
+          user = existingByEmail;
+        }
+      }
+    }
+
+    if (!user) {
+      throw new OAuthAccountNotLinkedException(profile.provider, profile.email ?? null);
+    }
+
+    return this.issueTokens(req, user.id, user.role);
   }
 }

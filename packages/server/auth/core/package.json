@@ -13,18 +13,25 @@
     "@nestjs/passport": "^11.0.5",
     "@repo/ports": "workspace:*",
     "@repo/types": "workspace:*",
+    "@repo/constants": "workspace:*",
+    "bcryptjs": "^3.0.3",
     "passport-jwt": "^4.0.1",
-    "bcryptjs": "^3.0.3"
+    "passport-local": "^1.0.0"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^24.10.0",
     "@types/passport-jwt": "^4.0.1",
+    "@types/passport-local": "^1.0.38",
     "tsdown": "^0.20.3"
   },
   "peerDependencies": {
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2"
+  },
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
   }
 }

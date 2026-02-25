@@ -63,7 +63,7 @@ export const config = [
     },
 
     rules: {
-      'turbo/no-undeclared-env-vars': 'warn',
+      'turbo/no-undeclared-env-vars': 'off',
       'no-unused-vars': 'off',
       'no-undef': 'off',
       '@typescript-eslint/no-unused-vars': [

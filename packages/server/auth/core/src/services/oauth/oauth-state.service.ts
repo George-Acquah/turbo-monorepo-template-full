@@ -1,9 +1,9 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { RedisPort, REDIS_PORT_TOKEN } from '@repo/ports';
+import { RedisPort, REDIS_PORT_TOKEN, OAuthProviderName } from '@repo/ports';
 import * as crypto from 'crypto';
 
-interface OAuthStatePayload {
-  provider: string;
+export interface OAuthStatePayload {
+  provider: OAuthProviderName;
   codeVerifier: string;
   returnTo?: string;
 }
@@ -27,11 +27,26 @@ export class OAuthStateService {
 
   async consume(state: string): Promise<OAuthStatePayload | null> {
     const key = `${this.prefix}:${state}`;
+    const script = `
+      local value = redis.call('GET', KEYS[1])
+      if not value then
+        return nil
+      end
+      redis.call('DEL', KEYS[1])
+      return value
+    `;
 
-    const data = await this.redis.get<OAuthStatePayload>(key);
-    if (!data) return null;
+    const raw = await this.redis.eval<OAuthStatePayload | string | null>(script, [key], []);
+    if (!raw) return null;
 
-    await this.redis.del(key);
-    return data;
+    if (typeof raw === 'string') {
+      try {
+        return JSON.parse(raw) as OAuthStatePayload;
+      } catch {
+        return null;
+      }
+    }
+
+    return raw as OAuthStatePayload;
   }
 }

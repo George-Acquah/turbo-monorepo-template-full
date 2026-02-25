@@ -2,10 +2,17 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { AppRequest, UserContext } from '@repo/types';
 import { RedisKeyPrefixes } from '@repo/constants';
 import { REDIS_PORT_TOKEN, RedisPort, CONTEXT_TOKEN, ContextPort } from '@repo/ports';
+
+type JwtPayload = {
+  sub: string;
+  jti?: string;
+  roles?: string[];
+  iat?: number;
+  exp?: number;
+};
 
 @Injectable()
 export class RefreshTokenStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
@@ -68,17 +75,14 @@ export class RefreshTokenStrategy extends PassportStrategy(Strategy, 'jwt-refres
     // Build user context
     const userContext: UserContext = {
       id: payload.sub,
-      roles: payload.roles ?? '',
-      iat: payload.iat,
-      exp: payload.exp,
+      email: '',
+      role: payload.roles?.[0] ?? '',
     };
 
     // Set user in AsyncLocalStorage context
     this.contextService.setUser(userContext);
-
     // Set raw refresh token in context for token rotation
     this.contextService.setRawRefreshToken(rawToken);
-    req.rawRefreshToken = rawToken;
 
     return userContext;
   }

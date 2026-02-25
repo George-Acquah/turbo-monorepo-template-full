@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ExecutionContext, Injectable } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { AsyncContextService } from '@repo/context';
 
 /**
  * OptionalAuthGuard - Allows both authenticated and unauthenticated requests.
@@ -11,15 +10,10 @@ import { AsyncContextService } from '@repo/context';
  */
 @Injectable()
 export class OptionalAuthGuard extends AuthGuard('jwt') {
-  constructor(private readonly contextService: AsyncContextService) {
-    super();
-  }
-
-  handleRequest(err: any, user: any, info: any, _: ExecutionContext) {
+  handleRequest(err: any, user: any, info: any, _context: ExecutionContext) {
     if (err || info) {
       return null; // allow request without user
     }
-    // User is already set in context by JwtStrategy.validate()
-    return user;
+    return user ?? null;
   }
 }
