@@ -2,13 +2,14 @@ import { ConflictException, Injectable, Inject, Optional } from '@nestjs/common'
 import { ClientSession } from 'mongoose';
 import { IdPrefixes } from '@repo/constants';
 import { IdempotencyDecision, IdempotencyPort, METRICS_PORT_TOKEN, MetricsPort } from '@repo/ports';
-import { MongoService } from '../../mongo.service';
+import { type MongoDbClient } from '../../mongo-db-client.provider';
+import { MONGO_DB_CLIENT_TOKEN } from '../../tokens/mongo.tokens';
 import { generateId } from '../../utils/generate-id';
 
 @Injectable()
 export class MongoIdempotencyAdapter implements IdempotencyPort {
   constructor(
-    private readonly mongo: MongoService,
+    @Inject(MONGO_DB_CLIENT_TOKEN) private readonly mongoDb: MongoDbClient,
     @Optional()
     @Inject(METRICS_PORT_TOKEN)
     private readonly metrics?: MetricsPort,
@@ -67,7 +68,7 @@ export class MongoIdempotencyAdapter implements IdempotencyPort {
     const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
 
     try {
-      await this.mongo.db.events.idempotencyKey.create(
+      await this.mongoDb.events.idempotencyKey.create(
         [
           {
             _id: generateId(IdPrefixes.IDEMPOTENCY_KEY),
@@ -93,7 +94,7 @@ export class MongoIdempotencyAdapter implements IdempotencyPort {
         throw error;
       }
 
-      const existing = await this.mongo.db.events.idempotencyKey.findOne({ scope, key }).lean();
+      const existing = await this.mongoDb.events.idempotencyKey.findOne({ scope, key }).lean();
       if (!existing) {
         return { decision: 'EXECUTE' };
       }
@@ -103,7 +104,7 @@ export class MongoIdempotencyAdapter implements IdempotencyPort {
       }
 
       if (existing.status === 'IN_PROGRESS' && existing.expires_at < new Date()) {
-        const claimed = await this.mongo.db.events.idempotencyKey.updateOne(
+        const claimed = await this.mongoDb.events.idempotencyKey.updateOne(
           {
             scope,
             key,
@@ -150,7 +151,7 @@ export class MongoIdempotencyAdapter implements IdempotencyPort {
   }): Promise<void> {
     const session = tx as ClientSession | undefined;
 
-    await this.mongo.db.events.idempotencyKey.updateOne(
+    await this.mongoDb.events.idempotencyKey.updateOne(
       { scope, key },
       {
         $set: {
@@ -177,7 +178,7 @@ export class MongoIdempotencyAdapter implements IdempotencyPort {
   }): Promise<void> {
     const session = tx as ClientSession | undefined;
 
-    await this.mongo.db.events.idempotencyKey.updateOne(
+    await this.mongoDb.events.idempotencyKey.updateOne(
       { scope, key },
       {
         $set: {

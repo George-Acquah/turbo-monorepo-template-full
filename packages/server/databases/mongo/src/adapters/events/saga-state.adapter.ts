@@ -1,11 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ClientSession } from 'mongoose';
-import { SagaState, SagaStatePort } from '@repo/ports';
-import { MongoService } from '../../mongo.service';
+import { SagaState, SagaStatePort, SagaStatus } from '@repo/ports';
+import { type MongoDbClient } from '../../mongo-db-client.provider';
+import { MONGO_DB_CLIENT_TOKEN } from '../../tokens/mongo.tokens';
+import { SagaStateDocument } from '../../schemas';
 
 @Injectable()
 export class MongoSagaStateAdapter implements SagaStatePort {
-  constructor(private readonly mongo: MongoService) {}
+  constructor(@Inject(MONGO_DB_CLIENT_TOKEN) private readonly mongoDb: MongoDbClient) {}
 
   async saveTx(tx: unknown, state: SagaState): Promise<void> {
     const session = tx as ClientSession;
@@ -17,12 +19,14 @@ export class MongoSagaStateAdapter implements SagaStatePort {
   }
 
   async findByCorrelationId(correlationId: string): Promise<SagaState | null> {
-    const row = await this.mongo.db.events.sagaState.findOne({ correlation_id: correlationId }).lean();
+    const row = await this.mongoDb.events.sagaState
+      .findOne({ correlation_id: correlationId })
+      .lean();
     return row ? this.mapState(row) : null;
   }
 
   async updateCompensating(correlationId: string): Promise<void> {
-    await this.mongo.db.events.sagaState.updateOne(
+    await this.mongoDb.events.sagaState.updateOne(
       { correlation_id: correlationId },
       {
         $set: {
@@ -35,7 +39,7 @@ export class MongoSagaStateAdapter implements SagaStatePort {
   }
 
   async updateCompensated(correlationId: string): Promise<void> {
-    await this.mongo.db.events.sagaState.updateOne(
+    await this.mongoDb.events.sagaState.updateOne(
       { correlation_id: correlationId },
       {
         $set: {
@@ -49,7 +53,7 @@ export class MongoSagaStateAdapter implements SagaStatePort {
   }
 
   async findByType(sagaType: string): Promise<SagaState[]> {
-    const rows = await this.mongo.db.events.sagaState
+    const rows = await this.mongoDb.events.sagaState
       .find({ saga_type: sagaType })
       .sort({ started_at: -1 })
       .lean();
@@ -58,7 +62,7 @@ export class MongoSagaStateAdapter implements SagaStatePort {
   }
 
   private async upsertState(state: SagaState, session?: ClientSession): Promise<void> {
-    await this.mongo.db.events.sagaState.updateOne(
+    await this.mongoDb.events.sagaState.updateOne(
       { correlation_id: state.correlationId },
       {
         $set: {
@@ -91,7 +95,7 @@ export class MongoSagaStateAdapter implements SagaStatePort {
     _id: string;
     saga_type: string;
     correlation_id: string;
-    status: SagaState['status'];
+    status: SagaStateDocument['status'];
     current_step: string;
     completed_steps: string[];
     failed_step?: string | null;
@@ -105,7 +109,7 @@ export class MongoSagaStateAdapter implements SagaStatePort {
       id: row._id,
       sagaType: row.saga_type,
       correlationId: row.correlation_id,
-      status: row.status,
+      status: row.status as SagaStatus,
       currentStep: row.current_step,
       completedSteps: row.completed_steps,
       failedStep: row.failed_step ?? undefined,

@@ -1,21 +1,55 @@
 import { Global, Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { TRANSACTION_PORT_TOKEN } from '@repo/ports';
+import { ConfigModule, ConfigType } from '@nestjs/config';
+import { MongooseModule, MongooseModuleOptions } from '@nestjs/mongoose';
+import { MONGO_TRANSACTION_PORT_TOKEN } from '@repo/ports';
 import { mongoConfig } from './config/mongo.config';
-import { MongoService } from './mongo.service';
 import { MongoTransactionAdapter } from './mongo-transaction.adapter';
+import { mongoDbClientProvider } from './mongo-db-client.provider';
+import { MongoService } from './mongo.service';
+import { EventsModelsModule, UsersModelsModule } from './modules';
+import { MONGO_CONNECTION_NAME, MONGO_DB_CLIENT_TOKEN } from './tokens/mongo.tokens';
 
 @Global()
 @Module({
-  imports: [ConfigModule.forFeature(mongoConfig)],
+  imports: [
+    ConfigModule.forFeature(mongoConfig),
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule.forFeature(mongoConfig)],
+      inject: [mongoConfig.KEY],
+      useFactory: (cfg: ConfigType<typeof mongoConfig>): MongooseModuleOptions => {
+        if (!cfg.uri) {
+          throw new Error('Mongo connection URI is missing. Set MONGODB_URI or MONGO_URI.');
+        }
+
+        const options: MongooseModuleOptions = {
+          uri: cfg.uri,
+          dbName: cfg.dbName,
+          maxPoolSize: cfg.maxPoolSize,
+          minPoolSize: cfg.minPoolSize,
+          serverSelectionTimeoutMS: cfg.serverSelectionTimeoutMs,
+          autoIndex: true,
+          autoCreate: true,
+        };
+
+        if (MONGO_CONNECTION_NAME) {
+          options.connectionName = MONGO_CONNECTION_NAME;
+        }
+
+        return options;
+      },
+    }),
+    UsersModelsModule,
+    EventsModelsModule,
+  ],
   providers: [
+    mongoDbClientProvider,
     MongoService,
     MongoTransactionAdapter,
     {
-      provide: TRANSACTION_PORT_TOKEN,
+      provide: MONGO_TRANSACTION_PORT_TOKEN,
       useExisting: MongoTransactionAdapter,
     },
   ],
-  exports: [MongoService, TRANSACTION_PORT_TOKEN],
+  exports: [MONGO_DB_CLIENT_TOKEN, MongoService, MONGO_TRANSACTION_PORT_TOKEN],
 })
 export class MongoModule {}

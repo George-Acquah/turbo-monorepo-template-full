@@ -1,24 +1,25 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { AuthRepositoryPort, type AuthUser, type ProviderIdentity } from '@repo/ports';
-import { MongoService } from '../../mongo.service';
+import { type MongoDbClient } from '../../mongo-db-client.provider';
+import { MONGO_DB_CLIENT_TOKEN } from '../../tokens/mongo.tokens';
 import { generateId } from '../../utils/generate-id';
 
 @Injectable()
 export class AuthRepositoryMongoAdapter implements AuthRepositoryPort {
-  constructor(private readonly mongo: MongoService) {}
+  constructor(@Inject(MONGO_DB_CLIENT_TOKEN) private readonly mongoDb: MongoDbClient) {}
 
   async findUserById(id: string): Promise<AuthUser | null> {
-    const user = await this.mongo.db.users.user.findById(id).lean();
+    const user = await this.mongoDb.users.user.findById(id).lean();
     return user ? this.mapUser(user) : null;
   }
 
   async findUserByEmail(email: string): Promise<AuthUser | null> {
-    const user = await this.mongo.db.users.user.findOne({ email }).lean();
+    const user = await this.mongoDb.users.user.findOne({ email }).lean();
     return user ? this.mapUser(user) : null;
   }
 
   async findUserByProviderIdentity(identity: ProviderIdentity): Promise<AuthUser | null> {
-    const link = await this.mongo.db.users.userAuthProvider
+    const link = await this.mongoDb.users.userAuthProvider
       .findOne({
         provider: identity.provider,
         provider_id: identity.providerId,
@@ -27,14 +28,14 @@ export class AuthRepositoryMongoAdapter implements AuthRepositoryPort {
 
     if (!link) return null;
 
-    const user = await this.mongo.db.users.user.findById(link.user_id).lean();
+    const user = await this.mongoDb.users.user.findById(link.user_id).lean();
     return user ? this.mapUser(user) : null;
   }
 
   async linkProviderIdentity(params: { userId: string; identity: ProviderIdentity }): Promise<void> {
     const { userId, identity } = params;
 
-    await this.mongo.db.users.userAuthProvider.updateOne(
+    await this.mongoDb.users.userAuthProvider.updateOne(
       {
         provider: identity.provider,
         provider_id: identity.providerId,
@@ -64,7 +65,7 @@ export class AuthRepositoryMongoAdapter implements AuthRepositoryPort {
     ipAddress?: string | null;
     userAgent?: string | null;
   }): Promise<void> {
-    await this.mongo.db.users.userSession.updateOne(
+    await this.mongoDb.users.userSession.updateOne(
       {
         user_id: params.userId,
         device_id: params.deviceId,
@@ -92,7 +93,7 @@ export class AuthRepositoryMongoAdapter implements AuthRepositoryPort {
     userId: string;
     deviceId: string;
   }): Promise<{ refreshTokenHash: string; jti: string; expiresAt: Date } | null> {
-    const session = await this.mongo.db.users.userSession
+    const session = await this.mongoDb.users.userSession
       .findOne({
         user_id: params.userId,
         device_id: params.deviceId,
@@ -109,14 +110,14 @@ export class AuthRepositoryMongoAdapter implements AuthRepositoryPort {
   }
 
   async revokeRefreshSession(params: { userId: string; deviceId: string }): Promise<void> {
-    await this.mongo.db.users.userSession.deleteOne({
+    await this.mongoDb.users.userSession.deleteOne({
       user_id: params.userId,
       device_id: params.deviceId,
     });
   }
 
   async recordLoginSuccess(params: { userId: string; ipAddress?: string | null }): Promise<void> {
-    await this.mongo.db.users.user.updateOne(
+    await this.mongoDb.users.user.updateOne(
       { _id: params.userId },
       {
         $set: {
@@ -132,7 +133,7 @@ export class AuthRepositoryMongoAdapter implements AuthRepositoryPort {
   }
 
   async recordLoginFailure(params: { userId: string }): Promise<void> {
-    await this.mongo.db.users.user.updateOne(
+    await this.mongoDb.users.user.updateOne(
       { _id: params.userId },
       {
         $inc: { failed_login_count: 1 },

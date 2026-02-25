@@ -1,18 +1,22 @@
 import { IdPrefixes } from '@repo/constants';
 import { OutboxEvent, OutboxPort } from '@repo/ports';
-import { Injectable } from '@nestjs/common';
-import { ClientSession } from 'mongoose';
-import { MongoService } from '../../mongo.service';
+import { Inject, Injectable } from '@nestjs/common';
+import { ClientSession, Connection } from 'mongoose';
+import { type MongoDbClient } from '../../mongo-db-client.provider';
+import { getMongoConnectionToken, MONGO_DB_CLIENT_TOKEN } from '../../tokens/mongo.tokens';
 import { generateId } from '../../utils/generate-id';
 
 @Injectable()
 export class MongoOutboxAdapter implements OutboxPort {
-  constructor(private readonly mongo: MongoService) {}
+  constructor(
+    @Inject(MONGO_DB_CLIENT_TOKEN) private readonly mongoDb: MongoDbClient,
+    @Inject(getMongoConnectionToken()) private readonly connection: Connection,
+  ) {}
 
   async enqueueTx(event: OutboxEvent, tx?: unknown): Promise<void> {
     const session = tx as ClientSession | undefined;
 
-    await this.mongo.db.events.outboxEvent.create(
+    await this.mongoDb.events.outboxEvent.create(
       [
         {
           _id: generateId(IdPrefixes.OUTBOX_EVENT),
@@ -40,7 +44,7 @@ export class MongoOutboxAdapter implements OutboxPort {
   }
 
   async fetchPending(limit: number): Promise<OutboxEvent[]> {
-    const session = await this.mongo.getConnection().startSession();
+    const session = await this.connection.startSession();
     try {
       let events: Array<{
         _id: string;
@@ -55,7 +59,7 @@ export class MongoOutboxAdapter implements OutboxPort {
       }> = [];
 
       await session.withTransaction(async () => {
-        events = await this.mongo.db.events.outboxEvent
+        events = await this.mongoDb.events.outboxEvent
           .find({
             status: 'PENDING',
             $and: [{ attempts: { $lt: 5 } }],
@@ -70,7 +74,7 @@ export class MongoOutboxAdapter implements OutboxPort {
           return;
         }
 
-        await this.mongo.db.events.outboxEvent.updateMany(
+        await this.mongoDb.events.outboxEvent.updateMany(
           { _id: { $in: events.map((event) => event._id) } },
           {
             $set: {
@@ -100,7 +104,7 @@ export class MongoOutboxAdapter implements OutboxPort {
   }
 
   async markProcessed(id: string): Promise<void> {
-    await this.mongo.db.events.outboxEvent.updateOne(
+    await this.mongoDb.events.outboxEvent.updateOne(
       { _id: id },
       {
         $set: {
@@ -113,7 +117,7 @@ export class MongoOutboxAdapter implements OutboxPort {
   }
 
   async markFailed(id: string, error: string, retryAt?: Date): Promise<void> {
-    await this.mongo.db.events.outboxEvent.updateOne(
+    await this.mongoDb.events.outboxEvent.updateOne(
       { _id: id },
       {
         $set: {

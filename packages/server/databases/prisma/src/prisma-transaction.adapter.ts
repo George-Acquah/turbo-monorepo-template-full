@@ -51,15 +51,19 @@ export class PrismaTransactionAdapter implements TransactionPort {
             const hadContext = this.ctx.isInContext();
             const previous = hadContext ? this.safeGetTx() : undefined;
 
-            if (hadContext)
-              this.ctx.setPrismaTransaction(tx as unknown as Prisma.TransactionClient);
+            if (hadContext) {
+              this.ctx.setTransaction('prisma', tx as unknown as Prisma.TransactionClient);
+            }
 
             try {
               return await operation(tx as unknown as Prisma.TransactionClient);
             } finally {
               if (hadContext) {
-                if (previous) this.ctx.setPrismaTransaction(previous);
-                else this.ctx.setPrismaTransaction(undefined);
+                if (previous) {
+                  this.ctx.setTransaction('prisma', previous);
+                } else {
+                  this.ctx.clearTransaction('prisma');
+                }
               }
             }
           },
@@ -86,7 +90,7 @@ export class PrismaTransactionAdapter implements TransactionPort {
     try {
       return (
         (this.ctx.isInContext()
-          ? this.ctx.getPrismaTransaction<Prisma.TransactionClient>()
+          ? this.ctx.getTransaction<Prisma.TransactionClient>('prisma')
           : undefined) ?? undefined
       );
     } catch {

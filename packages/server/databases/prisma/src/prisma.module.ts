@@ -3,7 +3,7 @@
 import { Global, Module } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import { PrismaTransactionAdapter } from './prisma-transaction.adapter';
-import { TRANSACTION_PORT_TOKEN } from '@repo/ports';
+import { PRISMA_TRANSACTION_PORT_TOKEN } from '@repo/ports';
 
 // Helper to create a proxied Prisma service that tracks all queries
 function createProxiedPrismaService(prometheusService?: any): PrismaService {
@@ -93,10 +93,10 @@ const prismaServiceProvider = {
     prismaServiceProvider,
     PrismaTransactionAdapter,
     {
-      provide: TRANSACTION_PORT_TOKEN,
+      provide: PRISMA_TRANSACTION_PORT_TOKEN,
       useExisting: PrismaTransactionAdapter,
     },
   ],
-  exports: [PrismaService, TRANSACTION_PORT_TOKEN],
+  exports: [PrismaService, PRISMA_TRANSACTION_PORT_TOKEN],
 })
 export class PrismaModule {}

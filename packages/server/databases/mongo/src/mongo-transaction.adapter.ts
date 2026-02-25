@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ClientSession } from 'mongoose';
+import { ClientSession, Connection } from 'mongoose';
 import { CONTEXT_TOKEN, ContextPort, LOGGER_TOKEN, LoggerPort, TransactionPort } from '@repo/ports';
-import { MongoService } from './mongo.service';
+import { getMongoConnectionToken } from './tokens/mongo.tokens';
 
 @Injectable()
 export class MongoTransactionAdapter implements TransactionPort {
@@ -9,7 +9,7 @@ export class MongoTransactionAdapter implements TransactionPort {
   private readonly DEFAULT_TIMEOUT = 10_000;
 
   constructor(
-    private readonly mongo: MongoService,
+    @Inject(getMongoConnectionToken()) private readonly connection: Connection,
     @Inject(LOGGER_TOKEN) private readonly logger: LoggerPort,
     @Inject(CONTEXT_TOKEN) private readonly ctx: ContextPort,
   ) {}
@@ -43,7 +43,7 @@ export class MongoTransactionAdapter implements TransactionPort {
     let lastError: unknown;
 
     while (attempt < maxRetries) {
-      const session = await this.mongo.getConnection().startSession();
+      const session = await this.connection.startSession();
       try {
         const result = await session.withTransaction(
           async () => {
@@ -51,7 +51,7 @@ export class MongoTransactionAdapter implements TransactionPort {
             const previous = hasContext ? this.safeGetTx() : undefined;
 
             if (hasContext) {
-              this.ctx.setPrismaTransaction(session);
+              this.ctx.setTransaction('mongo', session);
             }
 
             try {
@@ -59,9 +59,9 @@ export class MongoTransactionAdapter implements TransactionPort {
             } finally {
               if (hasContext) {
                 if (previous) {
-                  this.ctx.setPrismaTransaction(previous);
+                  this.ctx.setTransaction('mongo', previous);
                 } else {
-                  this.ctx.setPrismaTransaction(undefined);
+                  this.ctx.clearTransaction('mongo');
                 }
               }
             }
@@ -98,7 +98,7 @@ export class MongoTransactionAdapter implements TransactionPort {
         return undefined;
       }
 
-      return this.ctx.getPrismaTransaction<ClientSession>();
+      return this.ctx.getTransaction<ClientSession>('mongo');
     } catch {
       return undefined;
     }

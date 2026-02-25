@@ -4,10 +4,11 @@
   "type": "module",
   "private": true,
   "dependencies": {
-    "@repo/types": "workspace:*",
-    "@repo/ports": "workspace:*",
-    "@repo/constants": "workspace:*",
+    "@nestjs/mongoose": "^11.0.4",
     "@paralleldrive/cuid2": "^3.0.4",
+    "@repo/constants": "workspace:*",
+    "@repo/ports": "workspace:*",
+    "@repo/types": "workspace:*",
     "mongoose": "^8.20.1"
   },
   "scripts": {
@@ -17,7 +18,8 @@
   },
   "peerDependencies": {
     "@nestjs/common": "^11.0.1",
-    "@nestjs/config": "^4.0.2"
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/core": "^11.0.1"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
