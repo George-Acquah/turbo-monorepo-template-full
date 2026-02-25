@@ -1,6 +1,8 @@
 import { Request } from 'express';
 import { UserContext } from './user.interface';
 
+export type RequestTransactionEngine = 'prisma' | 'mongo';
+
 /**
  * AppContext (RequestContext) - Per-request context stored in AsyncLocalStorage.
  *
@@ -24,8 +26,8 @@ export interface RequestContext {
   /** Raw refresh token if present (for token refresh flows) */
   rawRefreshToken?: string;
 
-  /** Active Prisma transaction for request-scoped transactions */
-  prismaTransaction?: unknown;
+  /** Active transactions keyed by engine */
+  transactions?: Partial<Record<RequestTransactionEngine, unknown>>;
 
   /** Client device identifier for device-specific operations */
   deviceId?: string;
@@ -50,8 +52,6 @@ export interface RequestContext {
 
   /** Request start timestamp for performance tracking */
   startTime: number;
-
-  txClient?: unknown;
 }
 
 export interface ContextAuthData {

@@ -2,6 +2,8 @@
 
 import { AppRequest, ContextAuthData, UserContext } from '@repo/types';
 
+export type TransactionEngine = 'prisma' | 'mongo';
+
 export abstract class ContextPort {
   /**
    * Retrieves the current authenticated user.
@@ -55,12 +57,9 @@ export abstract class ContextPort {
 
   abstract getRoutePath(): string | undefined;
 
-  /**
-   * Retrieves the current Prisma transaction client if one exists in the context.
-   */
-  abstract getPrismaTransaction<T = unknown>(): T | undefined;
-
-  abstract setPrismaTransaction(tx?: unknown): boolean;
+  abstract setTransaction(engine: TransactionEngine, tx: unknown): boolean;
+  abstract getTransaction<T = unknown>(engine: TransactionEngine): T | undefined;
+  abstract clearTransaction(engine: TransactionEngine): boolean;
 
   /**
    * Checks if the execution is currently within a valid request context.

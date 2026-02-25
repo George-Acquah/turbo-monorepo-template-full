@@ -38,7 +38,6 @@ function getClientIp(req: Request): string | undefined {
  */
 @Injectable()
 export class ContextMiddleware implements NestMiddleware {
-  // eslint-disable-next-line no-unused-vars
   constructor(private readonly als: AsyncLocalStorage<RequestContext>) {}
 
   use(req: Request, res: Response, next: NextFunction): void {
@@ -61,9 +60,8 @@ export class ContextMiddleware implements NestMiddleware {
       userAgent: req.headers['user-agent'],
       deviceId: req.headers['x-device-id'] as string | undefined,
       startTime: Date.now(),
-      // user, claims, prismaTransaction - populated later by guards/services
+      // user, claims, transactions - populated later by guards/services
     };
-    // eslint-disable-next-line turbo/no-undeclared-env-vars
     if (process.env.CONTEXT_EXPOSE_RAW_REQUEST === 'true') {
       context.getRequest = () => req;
     }

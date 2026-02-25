@@ -2,7 +2,7 @@
 import { AsyncLocalStorage } from 'async_hooks';
 import { Injectable } from '@nestjs/common/decorators/core/injectable.decorator';
 import { RequestContext, UserContext, ContextAuthData, AppRequest } from '@repo/types';
-import { ContextPort } from '@repo/ports';
+import { ContextPort, TransactionEngine } from '@repo/ports';
 
 /**
  * AsyncContextService - Primary service for accessing request context via DI.
@@ -25,10 +25,11 @@ import { ContextPort } from '@repo/ports';
  */
 @Injectable()
 export class AsyncContextService implements ContextPort {
-  // eslint-disable-next-line no-unused-vars
   constructor(private readonly als: AsyncLocalStorage<RequestContext>) {}
+
   getRequest(): AppRequest | undefined {
-    throw new Error('Method not implemented.');
+    // return this.getStore()?.getRequest?.();
+    return undefined;
   }
 
   /**
@@ -177,17 +178,25 @@ export class AsyncContextService implements ContextPort {
     return this.set('rawRefreshToken', rawRefreshToken);
   }
 
-  /**
-   * Set a Prisma transaction for request-scoped transactions.
-   */
-  setPrismaTransaction(tx?: unknown): boolean {
-    return this.set('prismaTransaction', tx);
+  setTransaction(engine: TransactionEngine, tx: unknown): boolean {
+    const store = this.getStore();
+    if (!store) return false;
+
+    store.transactions ??= {};
+    store.transactions[engine] = tx;
+    return true;
   }
 
-  /**
-   * Get the current Prisma transaction if set.
-   */
-  getPrismaTransaction<T = unknown>(): T | undefined {
-    return this.get('prismaTransaction') as T | undefined;
+  getTransaction<T = unknown>(engine: TransactionEngine): T | undefined {
+    const tx = this.get('transactions')?.[engine];
+    return tx as T | undefined;
+  }
+
+  clearTransaction(engine: TransactionEngine): boolean {
+    const store = this.getStore();
+    if (!store?.transactions) return false;
+
+    delete store.transactions[engine];
+    return true;
   }
 }

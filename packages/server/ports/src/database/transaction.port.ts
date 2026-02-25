@@ -11,3 +11,5 @@ export abstract class TransactionPort {
 }
 
 export const TRANSACTION_PORT_TOKEN = Symbol('TRANSACTION_PORT_TOKEN');
+export const PRISMA_TRANSACTION_PORT_TOKEN = Symbol('PRISMA_TRANSACTION_PORT_TOKEN');
+export const MONGO_TRANSACTION_PORT_TOKEN = Symbol('MONGO_TRANSACTION_PORT_TOKEN');
