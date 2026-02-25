@@ -49,3 +49,5 @@ export abstract class AuthRepositoryPort {
   abstract recordLoginFailure(params: { userId: string }): Promise<void>;
 }
 export const AUTH_REPO_TOKEN = Symbol('AUTH_REPO_TOKEN');
+export const PRISMA_AUTH_REPO_TOKEN = Symbol('PRISMA_AUTH_REPO_TOKEN');
+export const MONGO_AUTH_REPO_TOKEN = Symbol('MONGO_AUTH_REPO_TOKEN');
