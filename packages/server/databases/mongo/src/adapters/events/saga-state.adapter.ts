@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ClientSession } from 'mongoose';
+import type { ClientSession } from 'mongoose';
 import { SagaState, SagaStatePort, SagaStatus } from '@repo/ports';
 import { type MongoDbClient } from '../../mongo-db-client.provider';
 import { MONGO_DB_CLIENT_TOKEN } from '../../tokens/mongo.tokens';

@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, Inject, Optional } from '@nestjs/common';
-import { ClientSession } from 'mongoose';
+import type { ClientSession } from 'mongoose';
 import { IdPrefixes } from '@repo/constants';
 import { IdempotencyDecision, IdempotencyPort, METRICS_PORT_TOKEN, MetricsPort } from '@repo/ports';
 import { type MongoDbClient } from '../../mongo-db-client.provider';

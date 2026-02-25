@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ClientSession, Connection } from 'mongoose';
+import type { ClientSession, Connection } from 'mongoose';
 import { CONTEXT_TOKEN, ContextPort, LOGGER_TOKEN, LoggerPort, TransactionPort } from '@repo/ports';
 import { getMongoConnectionToken } from './tokens/mongo.tokens';
 
@@ -82,7 +82,9 @@ export class MongoTransactionAdapter implements TransactionPort {
           throw error;
         }
 
-        this.logger.warn(`[tx] mongo retryable conflict (${attempt}/${maxRetries}) timeout=${timeout}ms`);
+        this.logger.warn(
+          `[tx] mongo retryable conflict (${attempt}/${maxRetries}) timeout=${timeout}ms`,
+        );
         await this.backoff(attempt);
       } finally {
         await session.endSession();
@@ -110,7 +112,10 @@ export class MongoTransactionAdapter implements TransactionPort {
       return false;
     }
 
-    return labels.includes('TransientTransactionError') || labels.includes('UnknownTransactionCommitResult');
+    return (
+      labels.includes('TransientTransactionError') ||
+      labels.includes('UnknownTransactionCommitResult')
+    );
   }
 
   private async backoff(attempt: number): Promise<void> {

@@ -1,8 +1,8 @@
 // src/common/context/async-context.service.ts
 import { AsyncLocalStorage } from 'async_hooks';
-import { Injectable } from '@nestjs/common/decorators/core/injectable.decorator';
 import { RequestContext, UserContext, ContextAuthData, AppRequest } from '@repo/types';
 import { ContextPort, TransactionEngine } from '@repo/ports';
+import { Injectable } from '@nestjs/common';
 
 /**
  * AsyncContextService - Primary service for accessing request context via DI.

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Connection } from 'mongoose';
+import type { Connection } from 'mongoose';
 import { type MongoDbClient } from './mongo-db-client.provider';
 import { getMongoConnectionToken, MONGO_DB_CLIENT_TOKEN } from './tokens/mongo.tokens';
 

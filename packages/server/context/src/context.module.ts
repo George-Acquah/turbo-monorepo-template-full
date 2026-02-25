@@ -1,6 +1,5 @@
-import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule, Global } from '@nestjs/common';
 import { AsyncLocalStorage } from 'async_hooks';
-import { Global } from '@nestjs/common/decorators/modules/global.decorator';
 import { AsyncContextService } from './context.service';
 import { ContextMiddleware } from './middleware/context.middleware';
 import { RequestContext } from '@repo/types';
