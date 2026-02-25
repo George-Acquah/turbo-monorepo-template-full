@@ -24,7 +24,7 @@ enum UserStatus {
 enum AuthProvider {
     EMAIL
     GOOGLE
-    FACEBOOK
+    GITHUB
     APPLE
     PHONE
 
@@ -112,33 +112,6 @@ enum NotificationStatus {
     DELIVERED
     FAILED
     BOUNCED
-
-    @@schema("notifications")
-}
-
-enum NotificationType {
-    ORDER_CREATED
-    ORDER_CONFIRMED
-    ORDER_SHIPPED
-    ORDER_DELIVERED
-    ORDER_CANCELLED
-    PAYMENT_SUCCESS
-    PAYMENT_FAILED
-    PAYMENT_REFUNDED
-    // Shein-style notifications
-    FLASH_SALE_STARTING
-    FLASH_SALE_ENDING
-    PRICE_DROP
-    BACK_IN_STOCK
-    NEW_COLLECTION
-    REVIEW_PUBLISHED
-    QUESTION_ANSWERED
-    WISHLIST_SALE
-    // Account
-    WELCOME
-    PASSWORD_RESET
-    ACCOUNT_VERIFICATION
-    PROMOTIONAL
 
     @@schema("notifications")
 }

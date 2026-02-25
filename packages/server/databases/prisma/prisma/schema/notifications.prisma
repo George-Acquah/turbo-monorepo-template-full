@@ -8,9 +8,10 @@ model NotificationTemplate {
   id String @id
 
   // Template identification
-  name String           @unique
-  slug String           @unique
-  type NotificationType
+  name String @unique
+  slug String @unique
+  //This will be enforced at the application layer
+  type String
 
   // Channel-specific content
   channels NotificationChannel[]
@@ -71,7 +72,7 @@ model Notification {
   id String @id
 
   // Type and channel
-  type    NotificationType
+  type    String
   channel NotificationChannel
 
   // Template reference
@@ -184,11 +185,11 @@ model InAppNotification {
   userId String @map("user_id")
 
   // Content
-  type      NotificationType
+  type      String
   title     String
   body      String
-  actionUrl String?          @map("action_url")
-  imageUrl  String?          @map("image_url")
+  actionUrl String? @map("action_url")
+  imageUrl  String? @map("image_url")
 
   // Related entities
   orderId String? @map("order_id")
@@ -244,9 +245,7 @@ model PushDevice {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  @@index([userId])
-  @@index([token])
-  @@index([isActive])
+
   @@map("push_devices")
   @@schema("notifications")
 }

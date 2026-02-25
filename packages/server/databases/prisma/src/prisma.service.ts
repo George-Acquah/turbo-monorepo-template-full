@@ -1,44 +1,54 @@
-// packages/database/src/prisma.service.ts
 import { Injectable, OnModuleDestroy, OnModuleInit, Optional, Inject } from '@nestjs/common';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '../generated/prisma/client';
+import { PrismaClient } from '../generated/prisma/client.js';
 import { PROMETHEUS_PORT_TOKEN, PrometheusPort } from '@repo/ports';
 
+function extendWithOptionalMetrics(base: PrismaClient, prometheus?: PrometheusPort) {
+  return base.$extends({
+    name: 'optional-prometheus-metrics',
+    query: {
+      $allModels: {
+        async $allOperations({ model, operation, args, query }) {
+          const start = Date.now();
+          try {
+            const result = await query(args);
+            const duration = (Date.now() - start) / 1000;
+            prometheus?.recordDatabaseQuery(operation, model ?? 'raw', duration);
+            return result;
+          } catch (err) {
+            const duration = (Date.now() - start) / 1000;
+            prometheus?.recordDatabaseQuery(operation, model ?? 'raw', duration);
+            throw err;
+          }
+        },
+      },
+    },
+  });
+}
+
+export type PrismaDbClient = ReturnType<typeof extendWithOptionalMetrics>;
+
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+export class PrismaService implements OnModuleInit, OnModuleDestroy {
+  public readonly db: PrismaDbClient;
+
   constructor(
     @Optional() @Inject(PROMETHEUS_PORT_TOKEN) private readonly prometheus?: PrometheusPort,
   ) {
+    // eslint-disable-next-line turbo/no-undeclared-env-vars
     const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
-    super({ adapter });
 
-    // Metrics middleware (safe, scalable)
-    if (this.prometheus) {
-      this.$use(async (params, next) => {
-        const start = Date.now();
-        try {
-          const result = await next(params);
-          const duration = (Date.now() - start) / 1000;
+    const base = new PrismaClient({ adapter });
 
-          // params.action = findMany/create/update/etc
-          // params.model = User/Post/etc (may be undefined for raw ops)
-          this.prometheus!.recordDatabaseQuery(params.action, params.model ?? 'raw', duration);
-
-          return result;
-        } catch (err) {
-          const duration = (Date.now() - start) / 1000;
-          this.prometheus!.recordDatabaseQuery(params.action, params.model ?? 'raw', duration);
-          throw err;
-        }
-      });
-    }
+    // IMPORTANT: always same type (no union)
+    this.db = extendWithOptionalMetrics(base, this.prometheus);
   }
 
   async onModuleInit() {
-    await this.$connect();
+    await this.db.$connect();
   }
 
   async onModuleDestroy() {
-    await this.$disconnect();
+    await this.db.$disconnect();
   }
 }

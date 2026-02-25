@@ -1,7 +1,7 @@
 import { Provider } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis, { RedisOptions } from 'ioredis';
-import { REDIS_BULLMQ_CLIENT, REDIS_CLIENT, redisConfigKey } from '../constants/redis.constants';
+import { REDIS_BULLMQ_CLIENT, REDIS_CLIENT, redisConfigKey } from '@repo/constants';
 import { IRedisConfig } from '../interfaces';
 import { LOGGER_TOKEN, LoggerPort } from '@repo/ports';
 

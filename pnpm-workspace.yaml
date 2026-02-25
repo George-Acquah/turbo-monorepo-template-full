@@ -4,3 +4,5 @@ packages:
   - "packages/client/*"
   - "packages/server/*"
   - "packages/server/databases/*"
+  - "packages/server/auth/*"
+  - "packages/server/auth/providers/*"

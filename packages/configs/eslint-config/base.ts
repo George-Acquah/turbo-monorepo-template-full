@@ -64,7 +64,8 @@ export const config = [
 
     rules: {
       'turbo/no-undeclared-env-vars': 'warn',
-      'no-unused-vars': 'warn',
+      'no-unused-vars': 'off',
+      'no-undef': 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',
         {
@@ -103,16 +104,14 @@ export const config = [
     },
   },
 
-  {
-    // This matches if path contains 'ports' or is within the ports package
-    files: [
-      '**/packages/server/ports/**/*.ts',
-      '**/ports/src/**/*.ts',
-      // 'src/**/*.ts', // This matches when running from inside the ports package
-    ],
-    rules: {
-      '@typescript-eslint/no-unused-vars': 'off',
-      'no-unused-vars': 'off',
-    },
+{
+  files: [
+    '**/packages/server/ports/**/*.ts',
+    '**/packages/ports/src/**/*.ts',
+  ],
+  rules: {
+    '@typescript-eslint/no-unused-vars': 'off',
+    'no-unused-vars': 'off',
   },
+}
 ] as Linter.Config[];

@@ -21,5 +21,9 @@
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^24.10.0",
     "tsdown": "^0.20.3"
+  },
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
   }
 }

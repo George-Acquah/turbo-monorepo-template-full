@@ -1,5 +1,5 @@
 import { ConfigService, registerAs } from '@nestjs/config';
-import { redisConfigKey } from '../constants/redis.constants';
+import { redisConfigKey } from '@repo/constants';
 import { IRedisConfig } from '../interfaces';
 
 export const redisConfig = (config: ConfigService): IRedisConfig => ({

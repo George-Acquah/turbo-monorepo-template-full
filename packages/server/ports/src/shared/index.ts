@@ -5,3 +5,4 @@ export * from './shared.interface';
 export * from './cache.port';
 export * from './metrics.port';
 export * from './queue-registry.port';
+export * from './rate-limit.port';

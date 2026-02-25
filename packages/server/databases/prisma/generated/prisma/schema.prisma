@@ -1,0 +1,1811 @@
+// packages/database/prisma/schema/audit.prisma
+// Audit Bounded Context - Audit logging and system activity tracking
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AuditLog - General audit log for tracking entity changes
+// ─────────────────────────────────────────────────────────────────────────────
+model AuditLog {
+  id String @id
+
+  // Entity info
+  //We want to enforce this at the application layer
+  entityType String
+  entityId   String @map("entity_id")
+
+  // Action info
+  action String
+
+  // Actor info
+  actorId    String? @map("actor_id")
+  actorEmail String? @map("actor_email")
+  actorRole  String? @map("actor_role")
+  actorType  String? @map("actor_type") // "user", "system", "api"
+
+  // Change details
+  oldValues     Json?    @map("old_values") @db.JsonB
+  newValues     Json?    @map("new_values") @db.JsonB
+  changedFields String[] @map("changed_fields")
+
+  // Context
+  ipAddress String? @map("ip_address")
+  userAgent String? @map("user_agent")
+  requestId String? @map("request_id") // Correlation ID
+
+  // Additional context
+  description String?
+  metadata    Json?   @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([requestId])
+  @@map("audit_logs")
+  @@schema("audit")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SystemEvent - System-level events and background job tracking
+// ─────────────────────────────────────────────────────────────────────────────
+model SystemEvent {
+  id String @id
+
+  // Event info
+  eventType String @map("event_type")
+  eventName String @map("event_name")
+
+  // Source
+  source String // e.g., "scheduler", "webhook", "api", "worker"
+
+  // Related entity
+  entityType String? @map("entity_type")
+  entityId   String? @map("entity_id")
+
+  // Event data
+  payload Json? @db.JsonB
+  result  Json? @db.JsonB
+
+  // Status
+  status String @default("completed") // "started", "completed", "failed"
+
+  // Error info
+  errorCode    String? @map("error_code")
+  errorMessage String? @map("error_message")
+  errorStack   String? @map("error_stack")
+
+  // Duration
+  startedAt   DateTime  @map("started_at") @db.Timestamptz(6)
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  durationMs  Int?      @map("duration_ms")
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([eventType, eventName])
+  @@index([source])
+  @@index([entityType, entityId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("system_events")
+  @@schema("audit")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ApiLog - API request/response logging
+// ─────────────────────────────────────────────────────────────────────────────
+model ApiLog {
+  id String @id
+
+  // Request info
+  method  String
+  path    String
+  query   Json?  @db.JsonB
+  body    Json?  @db.JsonB
+  headers Json?  @db.JsonB
+
+  // Response info
+  statusCode   Int   @map("status_code")
+  responseBody Json? @map("response_body") @db.JsonB
+
+  // Actor info
+  userId String? @map("user_id")
+
+  // Context
+  ipAddress String? @map("ip_address")
+  userAgent String? @map("user_agent")
+  requestId String? @map("request_id")
+
+  // Performance
+  durationMs Int @map("duration_ms")
+
+  // Error info
+  errorCode    String? @map("error_code")
+  errorMessage String? @map("error_message")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([method, path])
+  @@index([userId])
+  @@index([statusCode])
+  @@index([createdAt])
+  @@index([requestId])
+  @@map("api_logs")
+  @@schema("audit")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// JobLog - Background job execution logging
+// ─────────────────────────────────────────────────────────────────────────────
+model JobLog {
+  id String @id
+
+  // Job info
+  jobName String  @map("job_name")
+  jobId   String? @map("job_id") // Queue job ID
+  queue   String?
+
+  // Execution info
+  status String @default("queued") // "queued", "running", "completed", "failed", "retrying"
+
+  // Input/output
+  input  Json? @db.JsonB
+  output Json? @db.JsonB
+
+  // Timing
+  scheduledAt DateTime? @map("scheduled_at") @db.Timestamptz(6)
+  startedAt   DateTime? @map("started_at") @db.Timestamptz(6)
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  durationMs  Int?      @map("duration_ms")
+
+  // Retry info
+  attempt     Int       @default(1)
+  maxAttempts Int       @default(3) @map("max_attempts")
+  nextRetryAt DateTime? @map("next_retry_at") @db.Timestamptz(6)
+
+  // Error info
+  errorCode    String? @map("error_code")
+  errorMessage String? @map("error_message")
+  errorStack   String? @map("error_stack")
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([jobName])
+  @@index([queue])
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([createdAt])
+  @@map("job_logs")
+  @@schema("audit")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LoginAttempt - Track login attempts for security
+// ─────────────────────────────────────────────────────────────────────────────
+model LoginAttempt {
+  id String @id
+
+  // Identity
+  email  String?
+  phone  String?
+  userId String? @map("user_id")
+
+  // Result
+  isSuccessful  Boolean @map("is_successful")
+  failureReason String? @map("failure_reason")
+
+  // Context
+  ipAddress String  @map("ip_address")
+  userAgent String? @map("user_agent")
+  location  Json?   @db.JsonB // Geo info
+
+  // Device fingerprint
+  deviceFingerprint String? @map("device_fingerprint")
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([email])
+  @@index([phone])
+  @@index([userId])
+  @@index([ipAddress])
+  @@index([isSuccessful])
+  @@index([createdAt])
+  @@map("login_attempts")
+  @@schema("audit")
+}
+
+// packages/database/prisma/schema/enums.prisma
+// Shared enums across all bounded contexts
+
+// ─────────────────────────────────────────────────────────────────────────────
+// User & Auth Enums
+// ─────────────────────────────────────────────────────────────────────────────
+enum UserRole {
+  CUSTOMER
+  ADMIN
+  SUPER_ADMIN
+
+  @@schema("users")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
+
+  @@schema("users")
+}
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  GITHUB
+  APPLE
+  PHONE
+
+  @@schema("users")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Payment Enums
+// ─────────────────────────────────────────────────────────────────────────────
+enum PaymentStatus {
+  PENDING
+  INITIATED
+  PROCESSING
+  PAID
+  FAILED
+  CANCELLED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  EXPIRED
+
+  @@schema("payments")
+}
+
+enum PaymentProvider {
+  PAYSTACK
+  FLUTTERWAVE
+  MOBILE_MONEY
+  BANK_TRANSFER
+  CASH
+
+  @@schema("payments")
+}
+
+enum PaymentMethod {
+  CARD
+  MOBILE_MONEY
+  BANK_TRANSFER
+  USSD
+  QR_CODE
+  CASH
+
+  @@schema("payments")
+}
+
+enum RefundStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REJECTED
+
+  @@schema("payments")
+}
+
+enum WebhookEventStatus {
+  PENDING
+  PROCESSING
+  PROCESSED
+  FAILED
+  SKIPPED
+
+  @@schema("payments")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Notification Enums
+// ─────────────────────────────────────────────────────────────────────────────
+enum NotificationChannel {
+  EMAIL
+  SMS
+  PUSH
+  IN_APP
+  SLACK
+  TELEGRAM
+  WHATSAPP
+
+  @@schema("notifications")
+}
+
+enum NotificationStatus {
+  PENDING
+  QUEUED
+  SENDING
+  SENT
+  DELIVERED
+  FAILED
+  BOUNCED
+
+  @@schema("notifications")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// File Enums
+// ─────────────────────────────────────────────────────────────────────────────
+enum FileType {
+  IMAGE
+  DOCUMENT
+  VIDEO
+  AUDIO
+  OTHER
+
+  @@schema("files")
+}
+
+enum FileBucket {
+  PRODUCT_IMAGES
+  COLLECTION_ASSETS
+  REVIEW_IMAGES
+  USER_AVATARS
+  INVOICES
+  RECEIPTS
+  GENERAL
+
+  @@schema("files")
+}
+
+enum FileVisibility {
+  PUBLIC
+  PRIVATE
+  SIGNED
+
+  @@schema("files")
+}
+
+// packages/database/prisma/schema/events.prisma
+// Event-driven Architecture - Transactional Outbox, Sagas, and Dead Letter Queue
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OutboxEvent - Transactional Outbox Pattern for reliable event publishing
+// ─────────────────────────────────────────────────────────────────────────────
+model OutboxEvent {
+  id String @id
+
+  // Event identification
+  eventType     String @map("event_type")
+  aggregateType String @map("aggregate_type")
+  aggregateId   String @map("aggregate_id")
+
+  // Event payload
+  payload  Json  @db.JsonB
+  metadata Json? @db.JsonB
+
+  // Versioning for event schema evolution
+  version Int @default(1)
+
+  // Tracing
+  correlationId String? @map("correlation_id")
+  causationId   String? @map("causation_id")
+
+  // Processing status
+  status OutboxEventStatus @default(PENDING)
+
+  // Retry tracking
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(5) @map("max_attempts")
+  nextRetryAt DateTime? @map("next_retry_at") @db.Timestamptz(6)
+  lastError   String?   @map("last_error")
+
+  // Processing timestamps
+  processedAt DateTime? @map("processed_at") @db.Timestamptz(6)
+  failedAt    DateTime? @map("failed_at") @db.Timestamptz(6)
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status])
+  @@index([eventType])
+  @@index([aggregateType, aggregateId])
+  @@index([createdAt])
+  @@index([nextRetryAt])
+  @@index([correlationId])
+  @@map("outbox_events")
+  @@schema("events")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DeadLetterQueue - Failed events for manual inspection/retry
+// ─────────────────────────────────────────────────────────────────────────────
+model DeadLetterEvent {
+  id String @id
+
+  // Original event reference
+  originalEventId String? @map("original_event_id")
+  eventType       String  @map("event_type")
+  aggregateType   String  @map("aggregate_type")
+  aggregateId     String  @map("aggregate_id")
+
+  // Payload
+  payload  Json  @db.JsonB
+  metadata Json? @db.JsonB
+
+  // Error information
+  errorType    String  @map("error_type")
+  errorMessage String  @map("error_message")
+  errorStack   String? @map("error_stack")
+
+  // Tracing
+  correlationId String? @map("correlation_id")
+
+  // Processing attempts before DLQ
+  totalAttempts Int @map("total_attempts")
+
+  // Resolution
+  status          DLQEventStatus @default(UNRESOLVED)
+  resolvedAt      DateTime?      @map("resolved_at") @db.Timestamptz(6)
+  resolvedById    String?        @map("resolved_by_id")
+  resolutionNotes String?        @map("resolution_notes")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status])
+  @@index([eventType])
+  @@index([createdAt])
+  @@index([aggregateType, aggregateId])
+  @@map("dead_letter_events")
+  @@schema("events")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SagaState - Saga/Orchestration State for distributed transactions
+// ─────────────────────────────────────────────────────────────────────────────
+model SagaState {
+  id String @id
+
+  // Saga identification
+  sagaType      String @map("saga_type") // e.g., "OrderPaymentSaga"
+  correlationId String @unique @map("correlation_id")
+
+  // State
+  currentStep String     @map("current_step")
+  status      SagaStatus @default(STARTED)
+
+  // Data persisted across steps
+  data Json @db.JsonB
+
+  // Related entities
+  orderId   String? @map("order_id")
+  paymentId String? @map("payment_id")
+  userId    String? @map("user_id")
+
+  // Compensation tracking
+  completedSteps String[] @map("completed_steps")
+  failedStep     String?  @map("failed_step")
+  compensating   Boolean  @default(false)
+
+  // Error information
+  lastError String? @map("last_error")
+
+  // Timeout
+  timeoutAt DateTime? @map("timeout_at") @db.Timestamptz(6)
+
+  // Timestamps
+  startedAt   DateTime  @default(now()) @map("started_at") @db.Timestamptz(6)
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([sagaType])
+  @@index([status])
+  @@index([orderId])
+  @@index([paymentId])
+  @@index([timeoutAt])
+  @@index([startedAt])
+  @@map("saga_states")
+  @@schema("events")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// IdempotencyKey - Track processed operations for idempotency
+// ─────────────────────────────────────────────────────────────────────────────
+model IdempotencyKey {
+  id String @id
+
+  // Key identification
+  key   String
+  scope String // e.g., "payment", "order", "webhook"
+
+  // Request/Response caching
+  requestHash  String? @map("request_hash")
+  responseData Json?   @map("response_data") @db.JsonB
+  statusCode   Int?    @map("status_code")
+
+  // Status
+  status IdempotencyStatus @default(IN_PROGRESS)
+
+  // Related entity (optional)
+  entityType String? @map("entity_type")
+  entityId   String? @map("entity_id")
+
+  // Expiration (idempotency keys should expire)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+
+  // Timestamps
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+
+  @@unique([scope, key])
+  @@index([key])
+  @@index([scope, key])
+  @@index([expiresAt])
+  @@index([status])
+  @@map("idempotency_keys")
+  @@schema("events")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enums for Event Infrastructure
+// ─────────────────────────────────────────────────────────────────────────────
+enum OutboxEventStatus {
+  PENDING
+  PROCESSING
+  PROCESSED
+  FAILED
+  DEAD_LETTERED
+
+  @@schema("events")
+}
+
+enum DLQEventStatus {
+  UNRESOLVED
+  RETRYING
+  RESOLVED
+  IGNORED
+
+  @@schema("events")
+}
+
+enum SagaStatus {
+  STARTED
+  IN_PROGRESS
+  COMPLETED
+  COMPENSATING
+  COMPENSATED
+  FAILED
+
+  @@schema("events")
+}
+
+enum IdempotencyStatus {
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+
+  @@schema("events")
+}
+
+// packages/database/prisma/schema/files.prisma
+// Files Bounded Context - File storage, uploads, and metadata management
+
+// ─────────────────────────────────────────────────────────────────────────────
+// File - Core file entity for Supabase Storage integration
+// ─────────────────────────────────────────────────────────────────────────────
+model File {
+  id String @id
+
+  // Storage information
+  bucket FileBucket
+  key    String // Storage path/key
+  url    String // Public or signed URL
+  cdnUrl String?    @map("cdn_url") // CDN URL if available
+
+  // File metadata
+  fileName   String         @map("file_name")
+  fileType   FileType       @map("file_type")
+  mimeType   String         @map("mime_type")
+  size       Int // Size in bytes
+  visibility FileVisibility @default(PUBLIC)
+
+  // Image-specific metadata
+  width    Int?
+  height   Int?
+  blurhash String? // Blurhash for image placeholders
+
+  // Uploader information (cross-schema reference by ID)
+  uploadedById String? @map("uploaded_by_id")
+
+  // Entity association (polymorphic-like pattern)
+  entityType String? @map("entity_type") // e.g., "product", "batch", "user"
+  entityId   String? @map("entity_id")
+
+  // Ordering for galleries
+  sortOrder Int @default(0) @map("sort_order")
+
+  // Additional metadata
+  alt      String? // Alt text for images
+  caption  String? // Caption for images
+  metadata Json?   @db.JsonB
+
+  // Processing status
+  isProcessed Boolean   @default(false) @map("is_processed")
+  processedAt DateTime? @map("processed_at") @db.Timestamptz(6)
+
+  // Timestamps
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@unique([bucket, key])
+  @@index([bucket])
+  @@index([uploadedById])
+  @@index([entityType, entityId])
+  @@index([fileType])
+  @@index([createdAt])
+  @@map("files")
+  @@schema("files")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FileUpload - Track upload requests and signed URLs
+// ─────────────────────────────────────────────────────────────────────────────
+model FileUpload {
+  id String @id
+
+  // Upload request info
+  bucket   FileBucket
+  key      String
+  fileName String     @map("file_name")
+  mimeType String     @map("mime_type")
+  size     Int? // Expected size
+
+  // Signed URL info
+  signedUrl String   @map("signed_url")
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+
+  // Upload status
+  isCompleted Boolean   @default(false) @map("is_completed")
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  fileId      String?   @map("file_id") // Reference to created File
+
+  // Uploader
+  uploadedById String? @map("uploaded_by_id")
+
+  // Entity association
+  entityType String? @map("entity_type")
+  entityId   String? @map("entity_id")
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([bucket, key])
+  @@index([uploadedById])
+  @@index([expiresAt])
+  @@index([isCompleted])
+  @@map("file_uploads")
+  @@schema("files")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ProductImage - Junction table for Product-File relationship
+// Used for cross-schema reference without direct foreign keys
+// ─────────────────────────────────────────────────────────────────────────────
+// model ProductImage {
+//   id        String @id @default(uuid()) @db.Uuid
+//   productId String @map("product_id") @db.Uuid
+//   fileId    String @map("file_id") @db.Uuid
+
+//   // Image role
+//   isPrimary Boolean @default(false) @map("is_primary")
+//   sortOrder Int     @default(0) @map("sort_order")
+
+//   // Timestamps
+//   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+//   @@unique([productId, fileId])
+//   @@index([productId])
+//   @@index([fileId])
+//   @@map("product_images")
+//   @@schema("files")
+// }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BatchImage - Junction table for Batch-File relationship
+// ─────────────────────────────────────────────────────────────────────────────
+model BatchImage {
+  id      String @id
+  batchId String @map("batch_id")
+  fileId  String @map("file_id")
+
+  // Image role
+  isBanner  Boolean @default(false) @map("is_banner")
+  sortOrder Int     @default(0) @map("sort_order")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([batchId, fileId])
+  @@index([batchId])
+  @@index([fileId])
+  @@map("batch_images")
+  @@schema("files")
+}
+
+// packages/database/prisma/schema/notifications.prisma
+// Notifications Bounded Context - Multi-channel notifications and templates
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NotificationTemplate - Reusable notification templates
+// ─────────────────────────────────────────────────────────────────────────────
+model NotificationTemplate {
+  id String @id
+
+  // Template identification
+  name String @unique
+  slug String @unique
+  //This will be enforced at the application layer
+  type String
+
+  // Channel-specific content
+  channels NotificationChannel[]
+
+  // Email template
+  emailSubject String? @map("email_subject")
+  emailHtml    String? @map("email_html")
+  emailText    String? @map("email_text")
+
+  // SMS template
+  smsBody String? @map("sms_body")
+
+  // Push notification template
+  pushTitle String? @map("push_title")
+  pushBody  String? @map("push_body")
+  pushData  Json?   @map("push_data") @db.JsonB
+
+  // In-app notification
+  inAppTitle  String? @map("in_app_title")
+  inAppBody   String? @map("in_app_body")
+  inAppAction String? @map("in_app_action") // Action URL or deep link
+
+  // Slack template
+  slackMessage Json? @map("slack_message") @db.JsonB // Slack block kit
+
+  // Telegram template
+  telegramMessage String? @map("telegram_message")
+
+  // WhatsApp template
+  whatsappTemplateId String? @map("whatsapp_template_id")
+  whatsappParams     Json?   @map("whatsapp_params") @db.JsonB
+
+  // Variables (for validation)
+  variables String[] // e.g., ["orderNumber", "customerName"]
+
+  // Status
+  isActive Boolean @default(true) @map("is_active")
+
+  // Metadata
+  description String?
+  metadata    Json?   @db.JsonB
+
+  // Timestamps
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@index([type])
+  @@index([isActive])
+  @@map("notification_templates")
+  @@schema("notifications")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Notification - Individual notification instances
+// ─────────────────────────────────────────────────────────────────────────────
+model Notification {
+  id String @id
+
+  // Type and channel
+  type    String
+  channel NotificationChannel
+
+  // Template reference
+  templateId String? @map("template_id")
+
+  // Recipient info
+  userId            String? @map("user_id")
+  recipientEmail    String? @map("recipient_email")
+  recipientPhone    String? @map("recipient_phone")
+  recipientDevice   String? @map("recipient_device") // Push token
+  recipientSlack    String? @map("recipient_slack") // Slack channel/user
+  recipientTelegram String? @map("recipient_telegram") // Chat ID
+
+  // Content
+  subject  String?
+  title    String?
+  body     String
+  htmlBody String? @map("html_body")
+  data     Json?   @db.JsonB // Additional data
+
+  // Related entities (cross-schema references)
+  orderId   String? @map("order_id")
+  batchId   String? @map("batch_id")
+  paymentId String? @map("payment_id")
+
+  // Status
+  status NotificationStatus @default(PENDING)
+
+  // Scheduling
+  scheduledAt DateTime? @map("scheduled_at") @db.Timestamptz(6)
+
+  // Delivery tracking
+  queuedAt    DateTime? @map("queued_at") @db.Timestamptz(6)
+  sentAt      DateTime? @map("sent_at") @db.Timestamptz(6)
+  deliveredAt DateTime? @map("delivered_at") @db.Timestamptz(6)
+  openedAt    DateTime? @map("opened_at") @db.Timestamptz(6)
+  clickedAt   DateTime? @map("clicked_at") @db.Timestamptz(6)
+  failedAt    DateTime? @map("failed_at") @db.Timestamptz(6)
+
+  // Retry info
+  retryCount  Int       @default(0) @map("retry_count")
+  maxRetries  Int       @default(3) @map("max_retries")
+  nextRetryAt DateTime? @map("next_retry_at") @db.Timestamptz(6)
+
+  // Failure info
+  failureCode    String? @map("failure_code")
+  failureMessage String? @map("failure_message")
+
+  // Provider info
+  providerId       String? @map("provider_id") // Provider's message ID
+  providerResponse Json?   @map("provider_response") @db.JsonB
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  logs NotificationLog[]
+
+  @@index([userId])
+  @@index([type, channel])
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([orderId])
+  @@index([batchId])
+  @@index([createdAt])
+  @@map("notifications")
+  @@schema("notifications")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NotificationLog - Log of notification delivery attempts
+// ─────────────────────────────────────────────────────────────────────────────
+model NotificationLog {
+  id             String       @id
+  notificationId String       @map("notification_id")
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  // Attempt info
+  attemptNumber Int                @map("attempt_number")
+  status        NotificationStatus
+
+  // Provider info
+  providerId       String? @map("provider_id")
+  providerResponse Json?   @map("provider_response") @db.JsonB
+
+  // Failure info
+  failureCode    String? @map("failure_code")
+  failureMessage String? @map("failure_message")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([notificationId])
+  @@index([createdAt])
+  @@map("notification_logs")
+  @@schema("notifications")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// InAppNotification - In-app notification for user notification center
+// ─────────────────────────────────────────────────────────────────────────────
+model InAppNotification {
+  id String @id
+
+  // Recipient
+  userId String @map("user_id")
+
+  // Content
+  type      String
+  title     String
+  body      String
+  actionUrl String? @map("action_url")
+  imageUrl  String? @map("image_url")
+
+  // Related entities
+  orderId String? @map("order_id")
+  batchId String? @map("batch_id")
+
+  // Status
+  isRead      Boolean   @default(false) @map("is_read")
+  readAt      DateTime? @map("read_at") @db.Timestamptz(6)
+  isDismissed Boolean   @default(false) @map("is_dismissed")
+  dismissedAt DateTime? @map("dismissed_at") @db.Timestamptz(6)
+
+  // Expiry
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz(6)
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@index([createdAt])
+  @@index([expiresAt])
+  @@map("in_app_notifications")
+  @@schema("notifications")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PushDevice - Registered push notification devices
+// ─────────────────────────────────────────────────────────────────────────────
+model PushDevice {
+  id String @id
+
+  // User reference
+  userId String @map("user_id")
+
+  // Device info
+  token       String  @unique // Push token
+  platform    String // "ios", "android", "web"
+  deviceId    String? @map("device_id")
+  deviceModel String? @map("device_model")
+  osVersion   String? @map("os_version")
+  appVersion  String? @map("app_version")
+
+  // Status
+  isActive Boolean @default(true) @map("is_active")
+
+  // Last activity
+  lastActiveAt DateTime? @map("last_active_at") @db.Timestamptz(6)
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("push_devices")
+  @@schema("notifications")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NotificationConfig - Channel configuration
+// ─────────────────────────────────────────────────────────────────────────────
+model NotificationConfig {
+  id String @id
+
+  channel NotificationChannel @unique
+
+  // Provider configuration (encrypted in practice)
+  provider  String // e.g., "sendgrid", "twilio", "firebase"
+  apiKey    String? @map("api_key")
+  apiSecret String? @map("api_secret")
+
+  // Channel-specific config
+  fromEmail        String? @map("from_email")
+  fromName         String? @map("from_name")
+  fromPhone        String? @map("from_phone")
+  slackWebhook     String? @map("slack_webhook")
+  telegramBotToken String? @map("telegram_bot_token")
+
+  // Rate limiting
+  rateLimit  Int? @map("rate_limit") // Per minute
+  dailyLimit Int? @map("daily_limit")
+
+  // Status
+  isActive Boolean @default(true) @map("is_active")
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("notification_configs")
+  @@schema("notifications")
+}
+
+// packages/database/prisma/schema/payments.prisma
+// Payments Bounded Context - Payment processing, webhooks, and refunds
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Payment - Payment transaction record
+// ─────────────────────────────────────────────────────────────────────────────
+model Payment {
+  id String @id
+
+  // Order reference (cross-schema)
+  orderId String @map("order_id")
+
+  // Provider info
+  provider PaymentProvider
+  method   PaymentMethod?
+
+  // Provider-specific IDs
+  providerPaymentId String? @map("provider_payment_id")
+  providerReference String? @map("provider_reference")
+  authorizationCode String? @map("authorization_code")
+
+  // Amount
+  amount   Int
+  currency String @default("GHS")
+
+  // Fees (if applicable)
+  providerFee Int? @map("provider_fee")
+  netAmount   Int? @map("net_amount")
+
+  // Status
+  status PaymentStatus @default(PENDING)
+
+  // Timestamps for status changes
+  initiatedAt  DateTime? @map("initiated_at") @db.Timestamptz(6)
+  processingAt DateTime? @map("processing_at") @db.Timestamptz(6)
+  paidAt       DateTime? @map("paid_at") @db.Timestamptz(6)
+  failedAt     DateTime? @map("failed_at") @db.Timestamptz(6)
+  cancelledAt  DateTime? @map("cancelled_at") @db.Timestamptz(6)
+  expiredAt    DateTime? @map("expired_at") @db.Timestamptz(6)
+
+  // Failure info
+  failureCode    String? @map("failure_code")
+  failureMessage String? @map("failure_message")
+
+  // Card info (masked/tokenized)
+  cardLast4    String? @map("card_last_4")
+  cardBrand    String? @map("card_brand")
+  cardExpMonth Int?    @map("card_exp_month")
+  cardExpYear  Int?    @map("card_exp_year")
+
+  // Mobile money info
+  mobileNetwork String? @map("mobile_network")
+  mobileNumber  String? @map("mobile_number") // Masked
+
+  // Bank info
+  bankName      String? @map("bank_name")
+  accountNumber String? @map("account_number") // Masked
+
+  // Customer info
+  customerEmail String? @map("customer_email")
+  customerPhone String? @map("customer_phone")
+  customerId    String? @map("customer_id")
+
+  // IP and device info (for fraud prevention)
+  ipAddress String? @map("ip_address")
+  userAgent String? @map("user_agent")
+
+  // Idempotency
+  idempotencyKey String? @unique @map("idempotency_key")
+
+  // Raw response from provider
+  rawRequest  Json? @map("raw_request") @db.JsonB
+  rawResponse Json? @map("raw_response") @db.JsonB
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  refunds  Refund[]
+  attempts PaymentAttempt[]
+
+  @@index([orderId])
+  @@index([providerPaymentId])
+  @@index([providerReference])
+  @@index([status])
+  @@index([createdAt])
+  @@index([customerId])
+  @@map("payments")
+  @@schema("payments")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PaymentAttempt - Track multiple payment attempts
+// ─────────────────────────────────────────────────────────────────────────────
+model PaymentAttempt {
+  id        String  @id
+  paymentId String  @map("payment_id")
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  // Attempt info
+  attemptNumber Int            @map("attempt_number")
+  method        PaymentMethod?
+
+  // Provider response
+  providerRef String?       @map("provider_ref")
+  status      PaymentStatus
+
+  // Failure info
+  failureCode    String? @map("failure_code")
+  failureMessage String? @map("failure_message")
+
+  // Raw response
+  rawResponse Json? @map("raw_response") @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([paymentId])
+  @@index([createdAt])
+  @@map("payment_attempts")
+  @@schema("payments")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Refund - Refund transactions
+// ─────────────────────────────────────────────────────────────────────────────
+model Refund {
+  id        String  @id
+  paymentId String  @map("payment_id")
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  // Order reference (cross-schema)
+  orderId String @map("order_id")
+
+  // Provider info
+  providerRefundId String? @map("provider_refund_id")
+
+  // Amount
+  amount   Int
+  currency String @default("GHS")
+
+  // Status
+  status RefundStatus @default(PENDING)
+
+  // Reason
+  reason        String?
+  internalNotes String? @map("internal_notes")
+
+  // Timestamps
+  requestedAt DateTime  @default(now()) @map("requested_at") @db.Timestamptz(6)
+  processedAt DateTime? @map("processed_at") @db.Timestamptz(6)
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  failedAt    DateTime? @map("failed_at") @db.Timestamptz(6)
+
+  // Failure info
+  failureCode    String? @map("failure_code")
+  failureMessage String? @map("failure_message")
+
+  // Requested by
+  requestedById String? @map("requested_by_id")
+
+  // Raw response
+  rawResponse Json? @map("raw_response") @db.JsonB
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([paymentId])
+  @@index([orderId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("refunds")
+  @@schema("payments")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WebhookEvent - Store incoming webhook events for idempotent processing
+// ─────────────────────────────────────────────────────────────────────────────
+model WebhookEvent {
+  id String @id
+
+  // Provider info
+  provider  PaymentProvider
+  eventType String          @map("event_type")
+  eventId   String?         @map("event_id") // Provider's event ID
+
+  // Payload
+  payload        Json    @db.JsonB
+  headers        Json?   @db.JsonB
+  signature      String?
+  idempotencyKey String? @unique @map("idempotency_key")
+
+  // Processing status
+  status WebhookEventStatus @default(PENDING)
+
+  // Processing info
+  processedAt     DateTime? @map("processed_at") @db.Timestamptz(6)
+  processingError String?   @map("processing_error")
+  retryCount      Int       @default(0) @map("retry_count")
+  lastRetryAt     DateTime? @map("last_retry_at") @db.Timestamptz(6)
+
+  // Related entities
+  paymentId String? @map("payment_id")
+  refundId  String? @map("refund_id")
+  orderId   String? @map("order_id")
+
+  // IP info
+  ipAddress String? @map("ip_address")
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([provider, eventId])
+  @@index([provider, eventType])
+  @@index([status])
+  @@index([createdAt])
+  @@index([paymentId])
+  @@index([orderId])
+  @@map("webhook_events")
+  @@schema("payments")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PaymentMethod - Saved payment methods for returning customers
+// ─────────────────────────────────────────────────────────────────────────────
+model SavedPaymentMethod {
+  id String @id
+
+  // User reference (cross-schema)
+  userId String @map("user_id")
+
+  // Provider info
+  provider      PaymentProvider
+  providerToken String          @map("provider_token") // Tokenized card/account
+
+  // Method type
+  type PaymentMethod
+
+  // Display info (masked)
+  displayName String @map("display_name") // e.g., "**** 4242"
+
+  // Card info
+  cardLast4    String? @map("card_last_4")
+  cardBrand    String? @map("card_brand")
+  cardExpMonth Int?    @map("card_exp_month")
+  cardExpYear  Int?    @map("card_exp_year")
+
+  // Mobile money info
+  mobileNetwork String? @map("mobile_network")
+  mobileNumber  String? @map("mobile_number") // Masked
+
+  // Bank info
+  bankName      String? @map("bank_name")
+  accountNumber String? @map("account_number") // Masked
+
+  // Preferences
+  isDefault Boolean @default(false) @map("is_default")
+
+  // Status
+  isActive  Boolean   @default(true) @map("is_active")
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz(6)
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@index([userId])
+  @@index([userId, isDefault])
+  @@index([provider])
+  @@map("saved_payment_methods")
+  @@schema("payments")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PaymentConfig - Payment provider configuration
+// ─────────────────────────────────────────────────────────────────────────────
+model PaymentConfig {
+  id String @id
+
+  provider PaymentProvider @unique
+
+  // API configuration (encrypted in practice)
+  publicKey     String? @map("public_key")
+  secretKey     String? @map("secret_key")
+  webhookSecret String? @map("webhook_secret")
+
+  // Environment
+  isLive Boolean @default(false) @map("is_live")
+
+  // Supported methods
+  supportedMethods PaymentMethod[] @map("supported_methods")
+
+  // Fees configuration
+  feePercentage Decimal? @map("fee_percentage") @db.Decimal(5, 4)
+  feeFixed      Int?     @map("fee_fixed")
+
+  // Limits
+  minAmount Int? @map("min_amount")
+  maxAmount Int? @map("max_amount")
+
+  // Status
+  isActive Boolean @default(true) @map("is_active")
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("payment_configs")
+  @@schema("payments")
+}
+
+// Main schema file - datasource and generator configuration
+// Multi-schema approach for DDD bounded contexts
+
+generator client {
+  provider   = "prisma-client-js"
+  output     = "../../generated/prisma"
+  engineType = "library"
+
+  previewFeatures = ["relationJoins", "views", "schemaEngineDriverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  // All schemas used in the database - one per bounded context
+  schemas  = ["users", "payments", "notifications", "files", "audit", "events", "search"]
+}
+
+// packages/database/prisma/schema/search.prisma
+// Full-text Search Infrastructure - Search indexes and materialized views
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SearchDocument - Unified search index for full-text search across entities
+// Denormalized for fast search queries (SHEIN-style homepage search)
+// ─────────────────────────────────────────────────────────────────────────────
+model SearchDocument {
+  id String @id
+
+  // Entity reference
+  entityType SearchEntityType @map("entity_type")
+  entityId   String           @map("entity_id")
+
+  // Searchable content (indexed with GIN)
+  title       String
+  description String?
+  content     String? // Additional searchable content
+  tags        String[] // Tags/keywords for filtering
+
+  // For tsvector full-text search (computed column handled by trigger)
+  searchVector Unsupported("tsvector")? @map("search_vector")
+
+  // Categorization for faceted search
+  categoryIds   String[] @map("category_ids")
+  collectionIds String[] @map("collection_ids")
+  brandId       String?  @map("brand_id")
+
+  // Pricing (for price range filters)
+  price          Int?
+  compareAtPrice Int?   @map("compare_at_price")
+  currency       String @default("GHS")
+
+  // Ratings (for sorting/filtering)
+  rating      Decimal? @db.Decimal(3, 2)
+  reviewCount Int      @default(0) @map("review_count")
+
+  // Inventory status
+  inStock  Boolean @default(true) @map("in_stock")
+  quantity Int     @default(0)
+
+  // Popularity metrics (for ranking)
+  viewCount     Int @default(0) @map("view_count")
+  salesCount    Int @default(0) @map("sales_count")
+  wishlistCount Int @default(0) @map("wishlist_count")
+
+  // Promotions
+  isOnSale     Boolean @default(false) @map("is_on_sale")
+  isFeatured   Boolean @default(false) @map("is_featured")
+  isNewArrival Boolean @default(false) @map("is_new_arrival")
+  flashSaleId  String? @map("flash_sale_id")
+
+  // Image for display
+  imageUrl     String? @map("image_url")
+  thumbnailUrl String? @map("thumbnail_url")
+
+  // Slug for URL
+  slug String?
+
+  // Status
+  isActive Boolean @default(true) @map("is_active")
+
+  // Boost factor for ranking
+  boost Decimal @default(1.0) @db.Decimal(5, 2)
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  indexedAt DateTime @default(now()) @map("indexed_at") @db.Timestamptz(6)
+
+  @@unique([entityType, entityId])
+  @@index([entityType])
+  @@index([isActive])
+  @@index([inStock])
+  @@index([price])
+  @@index([rating])
+  @@index([salesCount])
+  @@index([isFeatured])
+  @@index([isOnSale])
+  @@index([createdAt])
+  @@index([categoryIds], type: Gin)
+  @@index([collectionIds], type: Gin)
+  @@index([tags], type: Gin)
+  @@map("search_documents")
+  @@schema("search")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SearchSynonym - Synonyms for search query expansion
+// ─────────────────────────────────────────────────────────────────────────────
+model SearchSynonym {
+  id String @id
+
+  // Primary term
+  term String @unique
+
+  // Synonyms
+  synonyms String[]
+
+  // Is this a two-way synonym or one-way
+  bidirectional Boolean @default(true)
+
+  // Active
+  isActive Boolean @default(true) @map("is_active")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([term])
+  @@index([isActive])
+  @@map("search_synonyms")
+  @@schema("search")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SearchQuery - Track search queries for analytics and autocomplete
+// ─────────────────────────────────────────────────────────────────────────────
+model SearchQuery {
+  id String @id
+
+  // Query
+  query           String
+  normalizedQuery String @map("normalized_query")
+
+  // User info
+  userId    String? @map("user_id")
+  sessionId String? @map("session_id")
+
+  // Results
+  resultCount Int      @map("result_count")
+  clickedIds  String[] @map("clicked_ids")
+
+  // Filters applied
+  filters Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([normalizedQuery])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("search_queries")
+  @@schema("search")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PopularSearch - Aggregated popular searches for suggestions
+// ─────────────────────────────────────────────────────────────────────────────
+model PopularSearch {
+  id String @id
+
+  // Query
+  query String @unique
+
+  // Metrics
+  searchCount     Int @default(1) @map("search_count")
+  clickCount      Int @default(0) @map("click_count")
+  conversionCount Int @default(0) @map("conversion_count")
+
+  // Score for ranking (computed from metrics)
+  score Decimal @default(0) @db.Decimal(10, 2)
+
+  // Display
+  displayText String? @map("display_text")
+
+  // Active
+  isActive Boolean @default(true) @map("is_active")
+
+  // Timestamps
+  lastSearchedAt DateTime @default(now()) @map("last_searched_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([isActive, score(sort: Desc)])
+  @@index([searchCount])
+  @@map("popular_searches")
+  @@schema("search")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enum for Search Entity Types
+// ─────────────────────────────────────────────────────────────────────────────
+enum SearchEntityType {
+  PRODUCT
+  COLLECTION
+  CATEGORY
+  BRAND
+
+  @@schema("search")
+}
+
+// packages/database/prisma/schema/users.prisma
+// Users Bounded Context - User management, authentication, and profiles
+
+// ─────────────────────────────────────────────────────────────────────────────
+// User - Core user entity
+// ─────────────────────────────────────────────────────────────────────────────
+model User {
+  id         String     @id
+  email      String?    @unique
+  phone      String?    @unique
+  supabaseId String?    @unique @map("supabase_id")
+  role       UserRole   @default(CUSTOMER)
+  status     UserStatus @default(PENDING_VERIFICATION)
+
+  // Profile information
+  firstName   String? @map("first_name")
+  lastName    String? @map("last_name")
+  displayName String? @map("display_name")
+  avatarUrl   String? @map("avatar_url")
+
+  // Email & phone verification
+  emailVerified   Boolean   @default(false) @map("email_verified")
+  phoneVerified   Boolean   @default(false) @map("phone_verified")
+  emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamptz(6)
+  phoneVerifiedAt DateTime? @map("phone_verified_at") @db.Timestamptz(6)
+
+  // Security
+  passwordHash     String?   @map("password_hash")
+  lastLoginAt      DateTime? @map("last_login_at") @db.Timestamptz(6)
+  lastLoginIp      String?   @map("last_login_ip")
+  failedLoginCount Int       @default(0) @map("failed_login_count")
+  lockedUntil      DateTime? @map("locked_until") @db.Timestamptz(6)
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  supabaseCreatedAt DateTime? @map("supabase_created_at") @db.Timestamptz(6)
+  supabaseUpdatedAt DateTime? @map("supabase_updated_at") @db.Timestamptz(6)
+  supabaseDeletedAt DateTime? @map("supabase_deleted_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  // Relations
+  addresses     Address[]
+  authProviders UserAuthProvider[]
+  preferences   UserPreference?
+  sessions      UserSession[]
+
+  @@index([email])
+  @@index([phone])
+  @@index([supabaseId])
+  @@index([role, status])
+  @@index([createdAt])
+  @@map("users")
+  @@schema("users")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Address - User shipping/billing addresses
+// ─────────────────────────────────────────────────────────────────────────────
+model Address {
+  id     String @id
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  label        String? // e.g., "Home", "Office"
+  fullName     String  @map("full_name")
+  addressLine1 String  @map("address_line_1")
+  addressLine2 String? @map("address_line_2")
+  city         String
+  region       String?
+  postalCode   String? @map("postal_code")
+  country      String  @default("GH")
+  phone        String?
+
+  // Address type flags
+  isDefault         Boolean @default(false) @map("is_default")
+  isShippingDefault Boolean @default(false) @map("is_shipping_default")
+  isBillingDefault  Boolean @default(false) @map("is_billing_default")
+
+  // GPS coordinates (for delivery)
+  latitude  Decimal? @db.Decimal(10, 8)
+  longitude Decimal? @db.Decimal(11, 8)
+
+  // Metadata
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@index([userId])
+  @@index([userId, isDefault])
+  @@map("addresses")
+  @@schema("users")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UserAuthProvider - OAuth/social login providers
+// ─────────────────────────────────────────────────────────────────────────────
+model UserAuthProvider {
+  id         String       @id
+  userId     String       @map("user_id")
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider   AuthProvider
+  providerId String       @map("provider_id")
+
+  // Provider-specific data
+  accessToken  String?   @map("access_token")
+  refreshToken String?   @map("refresh_token")
+  expiresAt    DateTime? @map("expires_at") @db.Timestamptz(6)
+  tokenData    Json?     @map("token_data") @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([provider, providerId])
+  @@index([userId])
+  @@map("user_auth_providers")
+  @@schema("users")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UserPreference - User settings and preferences
+// ─────────────────────────────────────────────────────────────────────────────
+model UserPreference {
+  id     String @id
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Notification preferences
+  emailNotifications Boolean @default(true) @map("email_notifications")
+  smsNotifications   Boolean @default(true) @map("sms_notifications")
+  pushNotifications  Boolean @default(true) @map("push_notifications")
+  marketingEmails    Boolean @default(false) @map("marketing_emails")
+
+  // App preferences
+  language String  @default("en")
+  currency String  @default("GHS")
+  timezone String  @default("Africa/Accra")
+  darkMode Boolean @default(false) @map("dark_mode")
+
+  // Additional preferences
+  preferences Json? @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("user_preferences")
+  @@schema("users")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UserSession - Active user sessions for security tracking
+// ─────────────────────────────────────────────────────────────────────────────
+model UserSession {
+  id     String @id
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  refreshTokenHash String @unique @map("refresh_token_hash")
+  jti              String @map("jti")
+
+  deviceId   String  @map("device_id")
+  deviceInfo String? @map("device_info")
+  ipAddress  String? @map("ip_address")
+  userAgent  String? @map("user_agent")
+
+  expiresAt    DateTime  @map("expires_at") @db.Timestamptz(6)
+  lastActiveAt DateTime? @map("last_active_at") @db.Timestamptz(6)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([userId, deviceId])
+  @@index([userId])
+  @@index([deviceId])
+  @@index([expiresAt])
+  @@map("user_sessions")
+  @@schema("users")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PasswordResetToken - Password reset tokens
+// ─────────────────────────────────────────────────────────────────────────────
+model PasswordResetToken {
+  id        String    @id
+  userId    String    @map("user_id")
+  token     String    @unique
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+  @@schema("users")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EmailVerificationToken - Email verification tokens
+// ─────────────────────────────────────────────────────────────────────────────
+model EmailVerificationToken {
+  id        String    @id
+  userId    String    @map("user_id")
+  email     String
+  token     String    @unique
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("email_verification_tokens")
+  @@schema("users")
+}

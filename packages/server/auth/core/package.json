@@ -1,0 +1,30 @@
+{
+  "name": "@repo/core",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@nestjs/jwt": "^11.0.2",
+    "@nestjs/passport": "^11.0.5",
+    "@repo/ports": "workspace:*",
+    "@repo/types": "workspace:*",
+    "passport-jwt": "^4.0.1",
+    "bcryptjs": "^3.0.3"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "^24.10.0",
+    "@types/passport-jwt": "^4.0.1",
+    "tsdown": "^0.20.3"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.2"
+  }
+}

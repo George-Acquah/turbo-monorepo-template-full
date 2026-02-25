@@ -1,5 +1,5 @@
 import { Module, Global } from '@nestjs/common';
-import { REDIS_BULLMQ_CLIENT, REDIS_CLIENT } from './constants/redis.constants';
+import { REDIS_BULLMQ_CLIENT, REDIS_CLIENT } from '@repo/constants';
 import { ConfigModule } from '@nestjs/config';
 import { RedisConfig } from './configs/redis.config';
 import { RedisBullMQProvider, RedisCacheProvider } from './providers/redis.provider';

@@ -16,7 +16,7 @@ export abstract class OutboxPort {
   /**
    * Create outbox event inside an existing transaction.
    */
-  abstract enqueueTx(tx: unknown, event: OutboxEvent): Promise<void>;
+  abstract enqueueTx(event: OutboxEvent, tx?: unknown): Promise<void>;
 
   /**
    * Fetch unpublished events for workers.

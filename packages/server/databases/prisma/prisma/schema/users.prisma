@@ -163,7 +163,10 @@ model UserSession {
   userId String @map("user_id")
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  token      String  @unique
+  refreshTokenHash String @unique @map("refresh_token_hash")
+  jti              String @map("jti")
+
+  deviceId   String  @map("device_id")
   deviceInfo String? @map("device_info")
   ipAddress  String? @map("ip_address")
   userAgent  String? @map("user_agent")
@@ -171,11 +174,11 @@ model UserSession {
   expiresAt    DateTime  @map("expires_at") @db.Timestamptz(6)
   lastActiveAt DateTime? @map("last_active_at") @db.Timestamptz(6)
 
-  // Timestamps
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
+  @@unique([userId, deviceId])
   @@index([userId])
-  @@index([token])
+  @@index([deviceId])
   @@index([expiresAt])
   @@map("user_sessions")
   @@schema("users")

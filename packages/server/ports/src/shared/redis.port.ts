@@ -10,6 +10,8 @@ export abstract class RedisPort {
   abstract publish<T>(channel: string, message: T): Promise<void>;
   abstract ping(): Promise<string>;
   abstract healthCheck(): Promise<boolean>;
+
+  abstract eval<T = unknown>(script: string, keys: string[], args: (string | number)[]): Promise<T>;
 }
 
 export const REDIS_PORT_TOKEN = Symbol('REDIS_PORT_TOKEN');

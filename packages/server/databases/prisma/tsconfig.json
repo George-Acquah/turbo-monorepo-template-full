@@ -2,9 +2,9 @@
   "extends": "@repo/typescript-config/nestjs.json",
   "compilerOptions": {
     "declaration": true,
-    "outDir": "./dist",
-    "rootDir": "./src"
+    "outDir": "./dist"
+    // "rootDir": "./src"
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "generated/**/*", "prisma.config.ts"],
   "exclude": ["node_modules", "dist"]
 }

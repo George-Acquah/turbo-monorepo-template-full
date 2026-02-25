@@ -1,10 +1,9 @@
 // packages/database/src/prisma-transaction.adapter.ts
 import { Inject, Injectable } from '@nestjs/common';
-import type { Prisma } from '../generated/prisma/client';
 import { Prisma as PrismaNs } from '../generated/prisma/client';
-
 import { LOGGER_TOKEN, LoggerPort, CONTEXT_TOKEN, ContextPort, TransactionPort } from '@repo/ports';
 import { PrismaService } from './prisma.service';
+import { Prisma } from '../generated/prisma/client';
 
 @Injectable()
 export class PrismaTransactionAdapter implements TransactionPort {
@@ -47,21 +46,20 @@ export class PrismaTransactionAdapter implements TransactionPort {
 
     while (attempt < maxRetries) {
       try {
-        return await this.prisma.$transaction(
+        return await this.prisma.db.$transaction<T>(
           async (tx) => {
-            // Put tx into ALS context for repositories/services called inside this function
             const hadContext = this.ctx.isInContext();
             const previous = hadContext ? this.safeGetTx() : undefined;
 
-            if (hadContext) this.ctx.setPrismaTransaction(tx);
+            if (hadContext)
+              this.ctx.setPrismaTransaction(tx as unknown as Prisma.TransactionClient);
 
             try {
-              return await operation(tx);
+              return await operation(tx as unknown as Prisma.TransactionClient);
             } finally {
-              // restore previous tx (usually undefined) so we don’t leak tx across scopes
               if (hadContext) {
                 if (previous) this.ctx.setPrismaTransaction(previous);
-                else this.ctx.setPrismaTransaction(undefined as any);
+                else this.ctx.setPrismaTransaction(undefined);
               }
             }
           },

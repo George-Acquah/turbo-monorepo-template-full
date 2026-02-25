@@ -1,15 +1,17 @@
 import { Inject } from '@nestjs/common';
-import { Injectable, Logger } from '@nestjs/common';
-import { RedisPort } from '@repo/ports';
-import { REDIS_CLIENT } from '../constants/redis.constants';
+import { Injectable } from '@nestjs/common';
+import { LOGGER_TOKEN, LoggerPort, RedisPort } from '@repo/ports';
+import { REDIS_CLIENT } from '@repo/constants';
 import type { RedisClient } from '../interfaces';
 
 @Injectable()
 export class RedisService implements RedisPort {
-  private logger = new Logger(RedisService.name);
+  private context = RedisService.name;
 
-  // eslint-disable-next-line no-unused-vars
-  constructor(@Inject(REDIS_CLIENT) private readonly redisClient: RedisClient) {}
+  constructor(
+    @Inject(REDIS_CLIENT) private readonly redisClient: RedisClient,
+    @Inject(LOGGER_TOKEN) private readonly logger: LoggerPort,
+  ) {}
 
   async set<T>(key: string, value: T, ttlSeconds?: number): Promise<void> {
     const data = this.safeStringify(value);
@@ -40,9 +42,9 @@ export class RedisService implements RedisPort {
     const keys = await this.redisClient.keys(pattern);
     if (keys.length > 0) {
       await this.redisClient.del(...keys);
-      this.logger.log(`Deleted ${keys.length} Redis keys matching: ${pattern}`);
+      this.logger.log(`Deleted ${keys.length} Redis keys matching: ${pattern}`, this.context);
     } else {
-      this.logger.log(`No Redis keys matched pattern: ${pattern}`);
+      this.logger.log(`No Redis keys matched pattern: ${pattern}`, this.context);
     }
   }
 
@@ -68,9 +70,19 @@ export class RedisService implements RedisPort {
       await this.ping();
       return true;
     } catch (error) {
-      this.logger.error('Redis health check failed', error);
+      this.logger.error('Redis health check failed', JSON.stringify(error), this.context);
       return false;
     }
+  }
+
+  async eval<T>(script: string, keys: string[], args: (string | number)[]): Promise<T> {
+    // ioredis style:
+    // return this.redisClient.eval(script, keys.length, ...keys, ...args) as any;
+
+    // node-redis v4 style:
+    // return this.redisClient.eval(script, { keys, arguments: args.map(String) }) as any;
+
+    return (await this.redisClient.eval(script, keys.length, ...keys, ...args.map(String))) as T;
   }
 
   private safeStringify<T>(value: T): string {

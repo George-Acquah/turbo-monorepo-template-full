@@ -8,6 +8,7 @@ export interface DomainEventMetadata {
   correlationId: string;
   causationId?: string;
   userId?: string;
+  tenantId?: string;
   timestamp: Date;
   version: number;
   source: string;

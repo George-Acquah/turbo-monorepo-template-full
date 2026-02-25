@@ -6,3 +6,5 @@ export * from './events';
 export * from './audit';
 export * from './payments';
 
+export * from './queues';
+export * from './auth';

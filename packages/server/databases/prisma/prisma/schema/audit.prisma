@@ -8,6 +8,7 @@ model AuditLog {
   id String @id
 
   // Entity info
+  //We want to enforce this at the application layer
   entityType String
   entityId   String          @map("entity_id")
 
