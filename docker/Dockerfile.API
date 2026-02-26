@@ -1,0 +1,72 @@
+# ------------------------------------------------------
+# 1. Base Image
+# ------------------------------------------------------
+FROM node:24-slim AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable && corepack prepare pnpm@10.17.1 --activate
+WORKDIR /repo
+
+# ------------------------------------------------------
+# 2. Prune (The Secret Sauce)
+# ------------------------------------------------------
+FROM base AS pruner
+# Use pnpm dlx to ensure we use a compatible version without global pollution
+COPY . .
+RUN pnpm dlx turbo prune @repo/api --docker --out-dir=out
+
+# ------------------------------------------------------
+# 3. Installer
+# ------------------------------------------------------
+FROM base AS installer
+COPY --from=pruner /repo/out/json/ .
+COPY --from=pruner /repo/out/pnpm-lock.yaml ./pnpm-lock.yaml
+
+# 1. Install dependencies (fixing the lockfile mismatch)
+RUN pnpm install --no-frozen-lockfile
+
+# 2. Copy the actual source code
+COPY --from=pruner /repo/out/full/ .
+COPY --from=pruner /repo/turbo.json ./turbo.json
+# 3. Generate Prisma Client 
+# We target the database package specifically to ensure the types are ready
+ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy?schema=public"
+
+RUN pnpm --filter=@repo/prisma run prisma:generate
+# 4. Build the project
+RUN pnpm run build --filter=@repo/api
+
+# ------------------------------------------------------
+# 4. Production Runner
+# ------------------------------------------------------
+FROM node:24-slim AS runner
+
+# 1. Setup Environment
+ENV PNPM_HOME="/pnpm"
+ENV COREPACK_HOME="/app/.corepack"
+ENV PATH="$PNPM_HOME:$PATH"
+
+# 2. Install runtime dependencies & Setup User
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/* && \
+    addgroup --system app && adduser --system --ingroup app app
+
+WORKDIR /app 
+
+# 3. Pre-create directories with correct ownership
+# This prevents the slow recursive chown later
+RUN mkdir -p /app /app/.corepack /pnpm && chown -R app:app /app /pnpm
+
+# 4. Enable Corepack as the correct user
+RUN corepack enable && corepack prepare pnpm@10.17.1 --activate
+
+# 5. Copy everything with ownership set DURING the copy
+# This is infinitely faster than running chown -R afterwards
+COPY --from=installer --chown=app:app /repo ./
+
+# Switch to app user
+USER app
+
+ENV NODE_ENV=production
+
+# 6. Execute
+CMD ["pnpm", "--filter=@repo/api", "run", "start:prod"]

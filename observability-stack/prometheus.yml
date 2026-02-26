@@ -1,0 +1,23 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: template-monitor
+    environment: development
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+scrape_configs:
+  - job_name: template-api
+    metrics_path: /api/metrics
+    scrape_interval: 5s
+    scrape_timeout: 5s
+    static_configs:
+      - targets: ['template-api-dev:3000']
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ['template-prometheus:9090']

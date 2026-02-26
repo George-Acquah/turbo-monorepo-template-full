@@ -1,0 +1,71 @@
+services:
+  redis:
+    image: redis:7
+    container_name: template-redis
+    healthcheck:
+      test: [ 'CMD', 'redis-cli', 'ping' ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - template-network
+
+  prisma:
+    image: postgres:latest
+    container_name: template-prisma-postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    env_file:
+      - ./.env.api
+    healthcheck:
+      # test: [ 'CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}' ]
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d turbo_dev_pg']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    networks:
+      - template-network
+
+  mongo:
+    image: mongo:7
+    container_name: template-mongo
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: [ "CMD-SHELL", "mongosh --quiet --eval 'db.adminCommand({ ping: 1 })' || exit 1" ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    networks:
+      - template-network
+
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.API
+      target: runner
+    container_name: template-api-dev
+    ports:
+      - '3000:3000'
+    env_file:
+      - ../apps/api/.env
+      - ./.env.api
+    depends_on:
+      prisma:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - template-network
+
+volumes:
+  postgres-data:
+  mongo-data:
+
+
+networks:
+  template-network:
+    external: true

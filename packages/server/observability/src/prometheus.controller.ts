@@ -3,7 +3,6 @@ import { SkipApiWrap } from '@repo/decorators';
 import type { AppRequest, Response } from '@repo/types';
 import { PROMETHEUS_PORT_TOKEN, PrometheusPort } from '@repo/ports';
 import { ConfigService } from '@nestjs/config';
-import { grafanaConfigKey, IGrafanaConfig } from './config/grafana.conig';
 
 interface MetricsUser {
   user: string;

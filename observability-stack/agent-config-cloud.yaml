@@ -1,0 +1,42 @@
+server:
+  log_level: debug
+  log_format: json
+
+metrics:
+  global:
+    scrape_interval: 15s
+    external_labels:
+      app: template
+      environment: ${GRAFANA_ENV:-local-testing}
+      cluster: ${GRAFANA_INSTANCE:-local-dev}
+
+  configs:
+    - name: default
+      scrape_configs:
+        - job_name: template-api
+          metrics_path: /api/metrics
+          scrape_interval: 15s
+          scrape_timeout: 10s
+
+          static_configs:
+            - targets:
+                - api:3000
+
+          relabel_configs:
+            - source_labels: [instance]
+              target_label: cluster
+
+      remote_write:
+        - url: ${GRAFANA_CLOUD_PROMETHEUS_URL}
+          basic_auth:
+            username: ${GRAFANA_CLOUD_PROMETHEUS_USER}
+            password: ${GRAFANA_CLOUD_PROMETHEUS_PASSWORD}
+
+          queue_config:
+            capacity: 10000
+            max_shards: 5
+            min_shards: 1
+            max_samples_per_send: 2000
+            batch_send_deadline: 5s
+            min_backoff: 30ms
+            max_backoff: 5s

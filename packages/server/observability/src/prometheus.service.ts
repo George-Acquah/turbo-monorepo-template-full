@@ -1,8 +1,8 @@
 import { PrometheusPort } from '@repo/ports';
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Inject, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { type ConfigType } from '@nestjs/config';
 import * as client from 'prom-client';
-import { grafanaConfigKey, IGrafanaConfig } from './config/grafana.conig';
+import { GrafanaConfig } from './config/grafana.config';
 
 @Injectable()
 export class PrometheusService implements PrometheusPort, OnModuleInit, OnModuleDestroy {
@@ -17,8 +17,8 @@ export class PrometheusService implements PrometheusPort, OnModuleInit, OnModule
   // Grafana Cloud - NOT used when Grafana Agent is scraping
   private readonly grafanaCloudEnabled: boolean;
 
-  constructor(private readonly config: ConfigService) {
-    const grafana = this.config.get<IGrafanaConfig>(grafanaConfigKey);
+  constructor(@Inject(GrafanaConfig.KEY)
+      grafana: ConfigType<typeof GrafanaConfig>,) {
     this.register = new client.Registry();
 
     // Set default labels that will appear on ALL metrics
@@ -99,9 +99,7 @@ export class PrometheusService implements PrometheusPort, OnModuleInit, OnModule
       console.log('   Grafana Agent provides better reliability and performance');
     } else {
       this.grafanaCloudEnabled = false;
-      console.log(
-        'ℹMetrics exposed at /api/metrics - Use Grafana Agent or Prometheus to scrape',
-      );
+      console.log('ℹMetrics exposed at /api/metrics - Use Grafana Agent or Prometheus to scrape');
     }
   }
 

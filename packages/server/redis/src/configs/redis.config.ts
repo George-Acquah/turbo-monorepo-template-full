@@ -1,14 +1,14 @@
-import { ConfigService, registerAs } from '@nestjs/config';
-import { redisConfigKey } from '@repo/constants';
-import { IRedisConfig } from '../interfaces';
+// redis.config.ts
+import { registerAs } from '@nestjs/config';
 
-export const redisConfig = (config: ConfigService): IRedisConfig => ({
-  url: config.get<string>('REDIS_URL'),
-  host: config.get<string>('REDIS_HOST'),
-  port: config.get<number>('REDIS_PORT', 6379),
-  password: config.get<string>('REDIS_PASSWORD'),
-  db: config.get<number>('REDIS_DB', 0),
-  connectionTimeout: Number(config.get<string>('REDIS_CONNECTION_TIMEOUT', '30000')),
-});
+export const RedisConfigKey = 'REDIS_CONFIG';
 
-export const RedisConfig = registerAs(redisConfigKey, () => redisConfig);
+export const RedisConfig = registerAs(RedisConfigKey, () => ({
+  url: process.env.REDIS_URL,
+  host: process.env.REDIS_HOST ?? 'localhost',
+  port: Number(process.env.REDIS_PORT ?? 6379),
+  password: process.env.REDIS_PASSWORD || undefined,
+  db: Number(process.env.REDIS_DB ?? 0),
+  connectionTimeout: Number(process.env.REDIS_CONNECTION_TIMEOUT ?? 30000),
+  tls: (process.env.REDIS_TLS ?? 'false') === 'true',
+}));

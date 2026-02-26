@@ -1,11 +1,11 @@
 import { Provider } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { ConfigType } from '@nestjs/config';
 import Redis, { RedisOptions } from 'ioredis';
-import { REDIS_BULLMQ_CLIENT, REDIS_CLIENT, redisConfigKey } from '@repo/constants';
-import { IRedisConfig } from '../interfaces';
+import { REDIS_BULLMQ_CLIENT, REDIS_CLIENT } from '@repo/constants';
 import { LOGGER_TOKEN, LoggerPort } from '@repo/ports';
+import { RedisConfig } from '../configs/redis.config';
 
-const getBaseOptions = (config: IRedisConfig): RedisOptions => {
+const getBaseOptions = (config: ConfigType<typeof RedisConfig>): RedisOptions => {
   const { connectionTimeout, host, port, password } = config;
 
   return {
@@ -13,27 +13,27 @@ const getBaseOptions = (config: IRedisConfig): RedisOptions => {
     port,
     password,
     enableReadyCheck: false,
+    // tls,
     connectTimeout: connectionTimeout,
   };
 };
 
 export const RedisCacheProvider: Provider = {
   provide: REDIS_CLIENT,
-  inject: [ConfigService, LOGGER_TOKEN],
-  useFactory: (config: ConfigService, logger: LoggerPort) => {
+  inject: [RedisConfig.KEY, LOGGER_TOKEN],
+  useFactory: (cfg: ConfigType<typeof RedisConfig>, logger: LoggerPort) => {
     const loggerContext = 'RedisCacheProvider';
-    const redisConfig = config.get<IRedisConfig>(redisConfigKey);
 
-    if (!redisConfig) {
+    if (!cfg) {
       logger.warn('No redis config found in DI', loggerContext);
       return;
     }
     const redisOptions: RedisOptions = {
-      ...getBaseOptions(redisConfig),
+      ...getBaseOptions(cfg),
       maxRetriesPerRequest: 3, // Fail after 3 tries
       retryStrategy: (times) => (times > 3 ? null : Math.min(times * 100, 2000)),
     };
-    const { url } = redisConfig;
+    const { url } = cfg;
 
     const client = url ? new Redis(url, redisOptions) : new Redis(redisOptions);
 
@@ -46,21 +46,20 @@ export const RedisCacheProvider: Provider = {
 
 export const RedisBullMQProvider: Provider = {
   provide: REDIS_BULLMQ_CLIENT,
-  inject: [ConfigService, LOGGER_TOKEN],
-  useFactory: (config: ConfigService, logger: LoggerPort) => {
+  inject: [RedisConfig.KEY, LOGGER_TOKEN],
+  useFactory: (cfg: ConfigType<typeof RedisConfig>, logger: LoggerPort) => {
     const loggerContext = 'RedisBullMQProvider';
-    const redisConfig = config.get<IRedisConfig>(redisConfigKey);
 
-    if (!redisConfig) {
+    if (!cfg) {
       logger.warn('No redis config found in DI', loggerContext);
       return;
     }
     const redisOptions: RedisOptions = {
-      ...getBaseOptions(redisConfig),
+      ...getBaseOptions(cfg),
       maxRetriesPerRequest: null, // Required by BullMQ
       retryStrategy: (times) => Math.min(times * 500, 10000), // Exponential backoff
     };
-    const { url } = redisConfig;
+    const { url } = cfg;
 
     const client = url ? new Redis(url, redisOptions) : new Redis(redisOptions);
 

@@ -1,0 +1,189 @@
+{
+  "uid": "template-app",
+  "title": "Template API - Application Metrics",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 3,
+  "tags": ["template", "application"],
+  "time": { "from": "now-1h", "to": "now" },
+
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "label": "Data Source",
+        "refresh": 1
+      },
+      {
+        "name": "app",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "$datasource" },
+        "query": "label_values(repo_http_requests_total, app)",
+        "refresh": 2,
+        "includeAll": true,
+        "allValue": ".*"
+      },
+      {
+        "name": "environment",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "$datasource" },
+        "query": "label_values(repo_http_requests_total, environment)",
+        "refresh": 2,
+        "includeAll": true,
+        "allValue": ".*"
+      },
+      {
+        "name": "instance",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "$datasource" },
+        "query": "label_values(repo_http_requests_total, instance)",
+        "refresh": 2,
+        "includeAll": true,
+        "allValue": ".*"
+      },
+      {
+        "name": "version",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "$datasource" },
+        "query": "label_values(repo_http_requests_total, version)",
+        "refresh": 2,
+        "includeAll": true,
+        "allValue": ".*"
+      }
+    ]
+  },
+
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "HTTP Requests Rate",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(repo_http_requests_total{app=~\"$app\",environment=~\"$environment\",instance=~\"$instance\",version=~\"$version\"}[5m])) or vector(0)",
+          "legendFormat": "Total Requests/sec"
+        }
+      ]
+    },
+
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Response Time Percentiles",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum by (le)(rate(repo_http_request_duration_seconds_bucket{app=~\"$app\",environment=~\"$environment\",instance=~\"$instance\",version=~\"$version\"}[5m])))",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le)(rate(repo_http_request_duration_seconds_bucket{app=~\"$app\",environment=~\"$environment\",instance=~\"$instance\",version=~\"$version\"}[5m])))",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le)(rate(repo_http_request_duration_seconds_bucket{app=~\"$app\",environment=~\"$environment\",instance=~\"$instance\",version=~\"$version\"}[5m])))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Memory Usage",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "repo_process_resident_memory_bytes{app=~\"$app\",environment=~\"$environment\",instance=~\"$instance\",version=~\"$version\"}",
+          "legendFormat": "Resident Memory"
+        },
+        {
+          "refId": "B",
+          "expr": "repo_nodejs_heap_size_used_bytes{app=~\"$app\",environment=~\"$environment\",instance=~\"$instance\",version=~\"$version\"}",
+          "legendFormat": "Heap Used"
+        }
+      ]
+    },
+
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Event Loop Lag",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "repo_nodejs_eventloop_lag_p50_seconds{app=~\"$app\",environment=~\"$environment\",instance=~\"$instance\",version=~\"$version\"}",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "repo_nodejs_eventloop_lag_p99_seconds{app=~\"$app\",environment=~\"$environment\",instance=~\"$instance\",version=~\"$version\"}",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Requests by Route",
+      "gridPos": { "x": 0, "y": 16, "w": 24, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (route)(rate(repo_http_requests_total{app=~\"$app\",environment=~\"$environment\",instance=~\"$instance\",version=~\"$version\"}[5m]))",
+          "legendFormat": "{{route}}"
+        }
+      ]
+    },
+
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "HTTP 5xx Error Rate",
+      "gridPos": { "x": 0, "y": 24, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(repo_http_requests_total{app=~\"$app\",environment=~\"$environment\",instance=~\"$instance\",version=~\"$version\",status_code=~\"5..\"}[5m])) or vector(0)",
+          "legendFormat": "5xx req/s"
+        },
+        {
+          "refId": "B",
+          "expr": "100 * ( (sum(rate(repo_http_requests_total{app=~\"$app\",environment=~\"$environment\",instance=~\"$instance\",version=~\"$version\",status_code=~\"5..\"}[5m])) or vector(0)) / (sum(rate(repo_http_requests_total{app=~\"$app\",environment=~\"$environment\",instance=~\"$instance\",version=~\"$version\"}[5m])) or vector(1)) )",
+          "legendFormat": "5xx %"
+        }
+      ]
+    },
+
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Logs by Level (rate)",
+      "gridPos": { "x": 12, "y": 24, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (level) (rate(log_level_count{app=~\"$app\",environment=~\"$environment\",instance=~\"$instance\",version=~\"$version\"}[5m]))",
+          "legendFormat": "{{level}}"
+        }
+      ]
+    }
+  ]
+}

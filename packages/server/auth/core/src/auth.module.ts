@@ -1,7 +1,7 @@
 import { Module, Global } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule, ConfigType } from '@nestjs/config';
+import { ConfigModule, type ConfigType } from '@nestjs/config';
 import { AuthConfig } from './configs/auth.config';
 
 import { TOKEN_PORT_TOKEN, HASH_PORT_TOKEN } from '@repo/ports';
@@ -19,7 +19,7 @@ import { EmailPasswordStrategy, JwtAccessStrategy, RefreshTokenStrategy } from '
 @Global()
 @Module({
   imports: [
-    ConfigModule.forFeature(AuthConfig), // provide typed config once
+    ConfigModule.forFeature(AuthConfig),
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule.forFeature(AuthConfig)],

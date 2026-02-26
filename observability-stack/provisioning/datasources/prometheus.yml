@@ -1,0 +1,19 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: prometheus-main
+    type: prometheus
+    access: proxy
+    url: http://template-prometheus:9090
+    isDefault: true
+    editable: true
+
+  - name: Loki
+    uid: loki-main
+    type: loki
+    access: proxy
+    url: http://template-loki:3100
+    editable: true
+    jsonData:
+      maxLines: 1000
