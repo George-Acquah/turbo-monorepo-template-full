@@ -4,7 +4,7 @@
 FROM node:24-slim AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable && corepack prepare pnpm@10.17.1 --activate
+RUN corepack enable && corepack prepare pnpm@10.30.3 --activate
 WORKDIR /repo
 
 # ------------------------------------------------------
@@ -57,7 +57,7 @@ WORKDIR /app
 RUN mkdir -p /app /app/.corepack /pnpm && chown -R app:app /app /pnpm
 
 # 4. Enable Corepack as the correct user
-RUN corepack enable && corepack prepare pnpm@10.17.1 --activate
+RUN corepack enable && corepack prepare pnpm@10.30.3 --activate
 
 # 5. Copy everything with ownership set DURING the copy
 # This is infinitely faster than running chown -R afterwards
