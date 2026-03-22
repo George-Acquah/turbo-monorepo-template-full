@@ -1,8 +1,7 @@
 import { Global, Module } from '@nestjs/common';
-import { ConfigModule, ConfigType } from '@nestjs/config';
+import { MONGO_RUNTIME_CONFIG_TOKEN, type MongoRuntimeConfig } from '@repo/config';
 import { MongooseModule, MongooseModuleOptions } from '@nestjs/mongoose';
 import { MONGO_TRANSACTION_PORT_TOKEN } from '@repo/ports';
-import { mongoConfig } from './config/mongo.config';
 import { MongoTransactionAdapter } from './mongo-transaction.adapter';
 import { mongoDbClientProvider } from './mongo-db-client.provider';
 import { MongoService } from './mongo.service';
@@ -12,11 +11,9 @@ import { MONGO_CONNECTION_NAME, MONGO_DB_CLIENT_TOKEN } from './tokens/mongo.tok
 @Global()
 @Module({
   imports: [
-    ConfigModule.forFeature(mongoConfig),
     MongooseModule.forRootAsync({
-      imports: [ConfigModule.forFeature(mongoConfig)],
-      inject: [mongoConfig.KEY],
-      useFactory: (cfg: ConfigType<typeof mongoConfig>): MongooseModuleOptions => {
+      inject: [MONGO_RUNTIME_CONFIG_TOKEN],
+      useFactory: (cfg: MongoRuntimeConfig): MongooseModuleOptions => {
         if (!cfg.uri) {
           throw new Error('Mongo connection URI is missing. Set MONGODB_URI or MONGO_URI.');
         }

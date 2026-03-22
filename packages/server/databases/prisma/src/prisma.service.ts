@@ -1,5 +1,6 @@
 import { Injectable, OnModuleDestroy, OnModuleInit, Optional, Inject } from '@nestjs/common';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { PRISMA_RUNTIME_CONFIG_TOKEN, type PrismaRuntimeConfig } from '@repo/config';
 import { PrismaClient } from '../generated/prisma/client.js';
 import { PROMETHEUS_PORT_TOKEN, PrometheusPort } from '@repo/ports';
 
@@ -33,10 +34,11 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   public readonly db: PrismaDbClient;
 
   constructor(
+    @Inject(PRISMA_RUNTIME_CONFIG_TOKEN)
+    prismaConfig: PrismaRuntimeConfig,
     @Optional() @Inject(PROMETHEUS_PORT_TOKEN) private readonly prometheus?: PrometheusPort,
   ) {
-    // eslint-disable-next-line turbo/no-undeclared-env-vars
-    const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+    const adapter = new PrismaPg({ connectionString: prismaConfig.databaseUrl });
 
     const base = new PrismaClient({ adapter });
 

@@ -4,6 +4,7 @@
     "baseUrl": ".",
     "rootDir": "../..",
     "paths": {
+      "@repo/config": ["../../packages/server/config/src/index.ts"],
       "@repo/events": ["../../packages/server/events/src/index.ts"],
       "@repo/persistence": ["../../packages/server/persistence/src/index.ts"]
     }

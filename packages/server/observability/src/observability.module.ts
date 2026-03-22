@@ -1,16 +1,13 @@
 import { Global, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { PrometheusController } from './prometheus.controller';
 import { LoggerService } from './logger/logger.service';
-import { ConfigModule } from '@nestjs/config';
 import { PrometheusMetricsAdapter } from './adapter/metrics.adapter';
-import { GrafanaConfig } from './config/grafana.config';
 import { PrometheusService } from './prometheus.service';
 import { LOGGER_TOKEN, METRICS_PORT_TOKEN, PROMETHEUS_PORT_TOKEN } from '@repo/ports';
 import { MetricsMiddleware } from './middlewares/metrics.middleware';
 
 @Global()
 @Module({
-  imports: [ConfigModule.forFeature(GrafanaConfig)],
   controllers: [PrometheusController],
   providers: [
     PrometheusService,

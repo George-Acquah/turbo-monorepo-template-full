@@ -3,11 +3,19 @@
 import { Global, Module } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import { PrismaTransactionAdapter } from './prisma-transaction.adapter';
-import { PRISMA_TRANSACTION_PORT_TOKEN } from '@repo/ports';
+import {
+  PRISMA_TRANSACTION_PORT_TOKEN,
+  PROMETHEUS_PORT_TOKEN,
+  type PrometheusPort,
+} from '@repo/ports';
+import { PRISMA_RUNTIME_CONFIG_TOKEN, type PrismaRuntimeConfig } from '@repo/config';
 
 // Helper to create a proxied Prisma service that tracks all queries
-function createProxiedPrismaService(prometheusService?: any): PrismaService {
-  const prismaService = new PrismaService(prometheusService);
+function createProxiedPrismaService(
+  prismaConfig: PrismaRuntimeConfig,
+  prometheusService?: PrometheusPort,
+): PrismaService {
+  const prismaService = new PrismaService(prismaConfig, prometheusService);
 
   // If no prometheus service, return as-is
   if (!prometheusService) {
@@ -76,12 +84,16 @@ function createProxiedPrismaService(prometheusService?: any): PrismaService {
 // Dynamic factory to create PrismaService with optional PrometheusService injection
 const prismaServiceProvider = {
   provide: PrismaService,
-  useFactory: (prometheusService?: any) => {
-    return createProxiedPrismaService(prometheusService);
+  useFactory: (
+    prismaConfig: PrismaRuntimeConfig,
+    prometheusService?: PrometheusPort,
+  ) => {
+    return createProxiedPrismaService(prismaConfig, prometheusService);
   },
   inject: [
+    PRISMA_RUNTIME_CONFIG_TOKEN,
     {
-      token: 'PrometheusService',
+      token: PROMETHEUS_PORT_TOKEN,
       optional: true,
     },
   ],

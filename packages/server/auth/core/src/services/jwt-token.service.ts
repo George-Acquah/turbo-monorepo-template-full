@@ -1,7 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
-import { type ConfigType } from '@nestjs/config';
-import { AuthConfig } from '../configs/auth.config';
+import { AUTH_RUNTIME_CONFIG_TOKEN, type AuthRuntimeConfig } from '@repo/config';
 import { TokenPort } from '@repo/ports';
 import { AccessTokenClaims } from '@repo/types';
 
@@ -9,8 +8,8 @@ import { AccessTokenClaims } from '@repo/types';
 export class JwtTokenService implements TokenPort {
   constructor(
     private readonly jwt: JwtService,
-    @Inject(AuthConfig.KEY)
-    private readonly cfg: ConfigType<typeof AuthConfig>,
+    @Inject(AUTH_RUNTIME_CONFIG_TOKEN)
+    private readonly cfg: AuthRuntimeConfig,
   ) {}
 
   async signAccess(claims: AccessTokenClaims): Promise<string> {

@@ -1,5 +1,5 @@
-import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { HTTP_RUNTIME_CONFIG_TOKEN, type HttpRuntimeConfig } from '@repo/config';
 import { AppModule } from './app.module';
 import { configureHttpApp } from './app.setup';
 
@@ -8,15 +8,9 @@ async function bootstrap() {
     bufferLogs: true,
   });
   configureHttpApp(app);
-  const config = app.get<ConfigService>(ConfigService);
+  const httpConfig = app.get<HttpRuntimeConfig>(HTTP_RUNTIME_CONFIG_TOKEN);
 
-  const rawPort = config.get<string>('PORT') ?? '3000';
-  const port = Number(rawPort);
-  if (!Number.isFinite(port) || port <= 0) {
-    throw new Error(`Invalid PORT value: ${rawPort}`);
-  }
-
-  await app.listen(port);
+  await app.listen(httpConfig.port);
 }
 
 void bootstrap();

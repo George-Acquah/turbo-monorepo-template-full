@@ -1,6 +1,6 @@
 import { Body, ConflictException, Controller, Delete, ForbiddenException, Get, HttpCode, Module, NotFoundException, Post, UnauthorizedException } from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
-import { ConfigModule } from '@nestjs/config';
+import { ServerConfigModule } from '@repo/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -13,6 +13,10 @@ import { SkipHttpResponseEnvelope } from '@repo/decorators';
 import { HttpExceptionEnvelopeFilter } from '@repo/filters';
 import { HttpResponseEnvelopeInterceptor } from '@repo/interceptor';
 import { LOGGER_TOKEN } from '@repo/ports';
+
+process.env.JWT_ACCESS_TOKEN_SECRET ??= 'test-access-secret';
+process.env.JWT_REFRESH_TOKEN_SECRET ??= 'test-refresh-secret';
+process.env.DATABASE_URL ??= 'postgresql://test:test@localhost:5432/template_test';
 
 class CreateThingDto {
   @IsString()
@@ -104,10 +108,8 @@ class ProbeController {
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      ignoreEnvFile: true,
-      cache: true,
+    ServerConfigModule.forRoot({
+      runtime: 'api',
     }),
     AppContextModule,
   ],

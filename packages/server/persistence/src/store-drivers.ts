@@ -1,4 +1,6 @@
-export type StoreDriver = 'prisma' | 'mongo';
+import { getValidatedServerEnv, type StoreDriver } from '@repo/config';
+
+export type { StoreDriver } from '@repo/config';
 
 export interface StoreDrivers {
   authRepoDriver: StoreDriver;
@@ -23,9 +25,16 @@ function parseDriver(
   );
 }
 
-export function resolveStoreDrivers(
-  env: NodeJS.ProcessEnv = process.env,
-): StoreDrivers {
+export function resolveStoreDrivers(env?: NodeJS.ProcessEnv): StoreDrivers {
+  if (!env) {
+    const validatedEnv = getValidatedServerEnv();
+    return {
+      authRepoDriver: validatedEnv.persistence.authRepoDriver,
+      transactionDriver: validatedEnv.persistence.transactionDriver,
+      eventsStoreDriver: validatedEnv.persistence.eventsStoreDriver,
+    };
+  }
+
   const transactionDriver = parseDriver(
     env.TRANSACTION_DRIVER,
     'TRANSACTION_DRIVER',

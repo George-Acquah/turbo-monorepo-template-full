@@ -1,15 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
-import { type ConfigType } from '@nestjs/config';
 import { Inject } from '@nestjs/common';
-import { AuthConfig } from '../configs/auth.config';
+import { AUTH_RUNTIME_CONFIG_TOKEN, type AuthRuntimeConfig } from '@repo/config';
 
 @Injectable()
 export class JwtAccessStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
-    @Inject(AuthConfig.KEY)
-    cfg: ConfigType<typeof AuthConfig>,
+    @Inject(AUTH_RUNTIME_CONFIG_TOKEN)
+    cfg: AuthRuntimeConfig,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),

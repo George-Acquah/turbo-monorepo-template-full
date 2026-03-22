@@ -1,8 +1,10 @@
 import { PrometheusPort } from '@repo/ports';
 import { Inject, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { type ConfigType } from '@nestjs/config';
+import {
+  OBSERVABILITY_RUNTIME_CONFIG_TOKEN,
+  type ObservabilityRuntimeConfig,
+} from '@repo/config';
 import * as client from 'prom-client';
-import { GrafanaConfig } from './config/grafana.config';
 
 @Injectable()
 export class PrometheusService implements PrometheusPort, OnModuleInit, OnModuleDestroy {
@@ -17,8 +19,10 @@ export class PrometheusService implements PrometheusPort, OnModuleInit, OnModule
   // Grafana Cloud - NOT used when Grafana Agent is scraping
   private readonly grafanaCloudEnabled: boolean;
 
-  constructor(@Inject(GrafanaConfig.KEY)
-      grafana: ConfigType<typeof GrafanaConfig>,) {
+  constructor(
+    @Inject(OBSERVABILITY_RUNTIME_CONFIG_TOKEN)
+    grafana: ObservabilityRuntimeConfig,
+  ) {
     this.register = new client.Registry();
 
     // Set default labels that will appear on ALL metrics

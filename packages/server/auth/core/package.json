@@ -12,6 +12,7 @@
   "dependencies": {
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/passport": "^11.0.5",
+    "@repo/config": "workspace:*",
     "@repo/ports": "workspace:*",
     "@repo/types": "workspace:*",
     "@repo/constants": "workspace:*",

@@ -1,7 +1,7 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { ConfigService } from '@nestjs/config';
+import { AUTH_RUNTIME_CONFIG_TOKEN, type AuthRuntimeConfig } from '@repo/config';
 import { AppRequest, UserContext } from '@repo/types';
 import { RedisKeyPrefixes } from '@repo/constants';
 import { REDIS_PORT_TOKEN, RedisPort, CONTEXT_TOKEN, ContextPort } from '@repo/ports';
@@ -17,13 +17,14 @@ type JwtPayload = {
 @Injectable()
 export class RefreshTokenStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
   constructor(
-    private readonly _config: ConfigService,
+    @Inject(AUTH_RUNTIME_CONFIG_TOKEN)
+    private readonly config: AuthRuntimeConfig,
     @Inject(REDIS_PORT_TOKEN) private readonly redis: RedisPort,
     @Inject(CONTEXT_TOKEN) private readonly contextService: ContextPort,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: _config.get<string>('JWT_REFRESH_TOKEN_SECRET') || '',
+      secretOrKey: config.jwt.refreshSecret,
       ignoreExpiration: false,
       passReqToCallback: true,
     });

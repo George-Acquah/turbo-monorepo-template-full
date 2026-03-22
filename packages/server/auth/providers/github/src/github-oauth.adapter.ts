@@ -1,5 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { type ConfigType } from '@nestjs/config';
+import {
+  GITHUB_OAUTH_RUNTIME_CONFIG_TOKEN,
+  type GithubOAuthRuntimeConfig,
+} from '@repo/config';
 import {
   ExternalProfile,
   HTTP_PORT_TOKEN,
@@ -7,7 +10,6 @@ import {
   OAuthProviderName,
   OAuthProviderPort,
 } from '@repo/ports';
-import { githubAuthConfig } from './github.config';
 import { GitHubEmailResponse, GitHubTokenResponse, GitHubUserProfileResponse } from './interfaces';
 import { GitHubOAuthExchangeError } from './errors';
 
@@ -18,8 +20,8 @@ export class GitHubOAuthAdapter implements OAuthProviderPort {
   constructor(
     @Inject(HTTP_PORT_TOKEN)
     private readonly http: HttpPort,
-    @Inject(githubAuthConfig.KEY)
-    private readonly cfg: ConfigType<typeof githubAuthConfig>,
+    @Inject(GITHUB_OAUTH_RUNTIME_CONFIG_TOKEN)
+    private readonly cfg: GithubOAuthRuntimeConfig,
   ) {}
 
   async buildAuthorizeUrl(params: {

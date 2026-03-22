@@ -1,5 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { type ConfigType } from '@nestjs/config';
+import {
+  GOOGLE_OAUTH_RUNTIME_CONFIG_TOKEN,
+  type GoogleOAuthRuntimeConfig,
+} from '@repo/config';
 import {
   ExternalProfile,
   HTTP_PORT_TOKEN,
@@ -7,7 +10,6 @@ import {
   OAuthProviderName,
   OAuthProviderPort,
 } from '@repo/ports';
-import { googleAuthConfig } from './google.config';
 import { GoogleOAuthExchangeError } from './errors';
 import { GoogleTokenResponse, GoogleUserInfoResponse } from './interfaces';
 
@@ -18,8 +20,8 @@ export class GoogleOAuthAdapter implements OAuthProviderPort {
   constructor(
     @Inject(HTTP_PORT_TOKEN)
     private readonly http: HttpPort,
-    @Inject(googleAuthConfig.KEY)
-    private readonly cfg: ConfigType<typeof googleAuthConfig>,
+    @Inject(GOOGLE_OAUTH_RUNTIME_CONFIG_TOKEN)
+    private readonly cfg: GoogleOAuthRuntimeConfig,
   ) {}
 
   async buildAuthorizeUrl(params: {

@@ -1,11 +1,10 @@
 import { Provider } from '@nestjs/common';
-import { ConfigType } from '@nestjs/config';
 import Redis, { RedisOptions } from 'ioredis';
 import { REDIS_BULLMQ_CLIENT, REDIS_CLIENT } from '@repo/constants';
+import { REDIS_RUNTIME_CONFIG_TOKEN, type RedisRuntimeConfig } from '@repo/config';
 import { LOGGER_TOKEN, LoggerPort } from '@repo/ports';
-import { RedisConfig } from '../configs/redis.config';
 
-const getBaseOptions = (config: ConfigType<typeof RedisConfig>): RedisOptions => {
+const getBaseOptions = (config: RedisRuntimeConfig): RedisOptions => {
   const { connectionTimeout, host, port, password } = config;
 
   return {
@@ -20,8 +19,8 @@ const getBaseOptions = (config: ConfigType<typeof RedisConfig>): RedisOptions =>
 
 export const RedisCacheProvider: Provider = {
   provide: REDIS_CLIENT,
-  inject: [RedisConfig.KEY, LOGGER_TOKEN],
-  useFactory: (cfg: ConfigType<typeof RedisConfig>, logger: LoggerPort) => {
+  inject: [REDIS_RUNTIME_CONFIG_TOKEN, LOGGER_TOKEN],
+  useFactory: (cfg: RedisRuntimeConfig, logger: LoggerPort) => {
     const loggerContext = 'RedisCacheProvider';
 
     if (!cfg) {
@@ -46,8 +45,8 @@ export const RedisCacheProvider: Provider = {
 
 export const RedisBullMQProvider: Provider = {
   provide: REDIS_BULLMQ_CLIENT,
-  inject: [RedisConfig.KEY, LOGGER_TOKEN],
-  useFactory: (cfg: ConfigType<typeof RedisConfig>, logger: LoggerPort) => {
+  inject: [REDIS_RUNTIME_CONFIG_TOKEN, LOGGER_TOKEN],
+  useFactory: (cfg: RedisRuntimeConfig, logger: LoggerPort) => {
     const loggerContext = 'RedisBullMQProvider';
 
     if (!cfg) {

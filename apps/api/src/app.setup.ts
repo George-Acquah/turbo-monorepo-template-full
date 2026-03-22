@@ -1,5 +1,5 @@
 import { INestApplication, LoggerService as LoggerServiceType, ValidationPipe } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { HTTP_RUNTIME_CONFIG_TOKEN, type HttpRuntimeConfig } from '@repo/config';
 import { json, urlencoded } from 'express';
 import { LOGGER_TOKEN } from '@repo/ports';
 
@@ -25,8 +25,7 @@ export function configureHttpApp(app: INestApplication): void {
     }),
   );
 
-  const config = app.get<ConfigService>(ConfigService);
-  const bodyLimit = config.get<string>('JSON_BODY_LIMIT') ?? '1mb';
-  app.use(json({ limit: bodyLimit }));
-  app.use(urlencoded({ extended: true, limit: bodyLimit }));
+  const httpConfig = app.get<HttpRuntimeConfig>(HTTP_RUNTIME_CONFIG_TOKEN);
+  app.use(json({ limit: httpConfig.jsonBodyLimit }));
+  app.use(urlencoded({ extended: true, limit: httpConfig.jsonBodyLimit }));
 }

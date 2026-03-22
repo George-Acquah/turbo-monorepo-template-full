@@ -22,6 +22,7 @@
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
+    "@repo/config": "workspace:*",
     "@repo/context": "workspace:*",
     "@repo/core": "workspace:*",
     "@repo/events": "workspace:*",
@@ -72,6 +73,7 @@
     },
     "moduleNameMapper": {
       "^@repo/constants$": "<rootDir>/../../../packages/server/constants/src/index.ts",
+      "^@repo/config$": "<rootDir>/../../../packages/server/config/src/index.ts",
       "^@repo/context$": "<rootDir>/../../../packages/server/context/src/index.ts",
       "^@repo/decorators$": "<rootDir>/../../../packages/server/decorators/src/index.ts",
       "^@repo/events$": "<rootDir>/../../../packages/server/events/src/index.ts",

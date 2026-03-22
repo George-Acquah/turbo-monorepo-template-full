@@ -1,8 +1,7 @@
 import { Module, Global } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule, type ConfigType } from '@nestjs/config';
-import { AuthConfig } from './configs/auth.config';
+import { AUTH_RUNTIME_CONFIG_TOKEN, type AuthRuntimeConfig } from '@repo/config';
 
 import { TOKEN_PORT_TOKEN, HASH_PORT_TOKEN } from '@repo/ports';
 import {
@@ -19,12 +18,10 @@ import { EmailPasswordStrategy, JwtAccessStrategy, RefreshTokenStrategy } from '
 @Global()
 @Module({
   imports: [
-    ConfigModule.forFeature(AuthConfig),
     PassportModule,
     JwtModule.registerAsync({
-      imports: [ConfigModule.forFeature(AuthConfig)],
-      inject: [AuthConfig.KEY],
-      useFactory: (cfg: ConfigType<typeof AuthConfig>) => ({
+      inject: [AUTH_RUNTIME_CONFIG_TOKEN],
+      useFactory: (cfg: AuthRuntimeConfig) => ({
         secret: cfg.jwt.accessSecret,
         signOptions: { expiresIn: cfg.jwt.accessExpiresIn as never },
       }),

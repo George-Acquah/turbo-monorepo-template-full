@@ -1,5 +1,5 @@
 {
-  "name": "@repo/persistence",
+  "name": "@repo/config",
   "version": "0.0.0",
   "type": "module",
   "private": true,
@@ -10,13 +10,12 @@
     "lint": "eslint src --ext .ts"
   },
   "dependencies": {
-    "@repo/config": "workspace:*",
-    "@repo/mongo": "workspace:*",
-    "@repo/ports": "workspace:*",
-    "@repo/prisma": "workspace:*"
-  },
-  "peerDependencies": {
-    "@nestjs/common": "^11.0.1"
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.2",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
+    "dotenv": "^17.2.2",
+    "dotenv-expand": "^12.0.3"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
@@ -24,6 +23,7 @@
     "@types/node": "^24.10.0",
     "tsdown": "^0.20.3"
   },
+  "types": "./src/index.ts",
   "exports": {
     ".": "./dist/index.mjs",
     "./package.json": "./package.json"

@@ -8,6 +8,7 @@
   },
   "moduleNameMapper": {
     "^@repo/constants$": "<rootDir>/../../../packages/server/constants/src/index.ts",
+    "^@repo/config$": "<rootDir>/../../../packages/server/config/src/index.ts",
     "^@repo/context$": "<rootDir>/../../../packages/server/context/src/index.ts",
     "^@repo/decorators$": "<rootDir>/../../../packages/server/decorators/src/index.ts",
     "^@repo/filters$": "<rootDir>/../../../packages/server/filters/src/index.ts",

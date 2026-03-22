@@ -1,10 +1,18 @@
 import { Inject, Injectable, NestMiddleware } from '@nestjs/common';
+import {
+  OBSERVABILITY_RUNTIME_CONFIG_TOKEN,
+  type ObservabilityRuntimeConfig,
+} from '@repo/config';
 import { PROMETHEUS_PORT_TOKEN, PrometheusPort } from '@repo/ports';
 import type { AppRequest, NextFunction, Response } from '@repo/types';
 
 @Injectable()
 export class MetricsMiddleware implements NestMiddleware {
-  constructor(@Inject(PROMETHEUS_PORT_TOKEN) private readonly prometheusService: PrometheusPort) {}
+  constructor(
+    @Inject(PROMETHEUS_PORT_TOKEN) private readonly prometheusService: PrometheusPort,
+    @Inject(OBSERVABILITY_RUNTIME_CONFIG_TOKEN)
+    private readonly config: ObservabilityRuntimeConfig,
+  ) {}
 
   use(req: AppRequest, res: Response, next: NextFunction) {
     const start = Date.now();
@@ -34,7 +42,7 @@ export class MetricsMiddleware implements NestMiddleware {
         );
       } catch (error) {
         // Silently catch errors to prevent middleware from breaking
-        if (process.env.DEBUG_METRICS === 'true') {
+        if (this.config.debugMetrics) {
           console.error('Error recording metrics:', error);
         }
       }

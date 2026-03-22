@@ -1,14 +1,12 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { OAUTH_PROVIDERS_TOKEN } from '@repo/ports';
 import { HttpClientModule } from '@repo/http';
-import { googleAuthConfig } from './google.config';
 import { GoogleOAuthAdapter } from './google-oauth.adapter';
 
 export const GOOGLE_OAUTH_PROVIDER_TOKEN = Symbol('GOOGLE_OAUTH_PROVIDER_TOKEN');
 
 @Module({
-  imports: [ConfigModule.forFeature(googleAuthConfig), HttpClientModule],
+  imports: [HttpClientModule],
   providers: [
     GoogleOAuthAdapter,
     {

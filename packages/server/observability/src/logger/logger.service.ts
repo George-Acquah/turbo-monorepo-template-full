@@ -4,14 +4,16 @@ import { createLogger, format, transports, Logger } from 'winston';
 import LokiTransport from 'winston-loki';
 import { Counter } from 'prom-client';
 import {
+  OBSERVABILITY_RUNTIME_CONFIG_TOKEN,
+  type ObservabilityRuntimeConfig,
+} from '@repo/config';
+import {
   CONTEXT_TOKEN,
   ContextPort,
   LoggerPort,
   PROMETHEUS_PORT_TOKEN,
   PrometheusPort,
 } from '@repo/ports';
-import { type ConfigType } from '@nestjs/config';
-import { GrafanaConfig } from '../config/grafana.config';
 
 type LogLevel = 'error' | 'warn' | 'info' | 'http' | 'verbose' | 'debug' | 'silly';
 
@@ -46,13 +48,13 @@ const safeJsonStringify = (value: unknown): string => {
 export class LoggerService implements INestLoggerService, LoggerPort {
   private readonly logger: Logger;
   private readonly logLevelCount: Counter<string>;
-  private readonly grafana: ConfigType<typeof GrafanaConfig>;
+  private readonly grafana: ObservabilityRuntimeConfig;
   private readonly lokiTransport?: LokiTransport;
 
   constructor(
     @Inject(PROMETHEUS_PORT_TOKEN) private readonly prometheusService: PrometheusPort,
     @Inject(CONTEXT_TOKEN) private readonly context: ContextPort,
-    @Inject(GrafanaConfig.KEY) grafana: ConfigType<typeof GrafanaConfig>,
+    @Inject(OBSERVABILITY_RUNTIME_CONFIG_TOKEN) grafana: ObservabilityRuntimeConfig,
   ) {
     this.grafana = grafana;
 

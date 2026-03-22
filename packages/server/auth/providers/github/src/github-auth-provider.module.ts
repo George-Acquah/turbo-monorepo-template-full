@@ -1,14 +1,12 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { OAUTH_PROVIDERS_TOKEN } from '@repo/ports';
 import { HttpClientModule } from '@repo/http';
-import { githubAuthConfig } from './github.config';
 import { GitHubOAuthAdapter } from './github-oauth.adapter';
 
 export const GITHUB_OAUTH_PROVIDER_TOKEN = Symbol('GITHUB_OAUTH_PROVIDER_TOKEN');
 
 @Module({
-  imports: [ConfigModule.forFeature(githubAuthConfig), HttpClientModule],
+  imports: [HttpClientModule],
   providers: [
     GitHubOAuthAdapter,
     {

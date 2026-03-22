@@ -1,7 +1,9 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { AsyncLocalStorage } from 'async_hooks';
+import { CONTEXT_RUNTIME_CONFIG_TOKEN, type ContextRuntimeConfig } from '@repo/config';
 import { RequestContext, AppRequest as Request, Response, NextFunction } from '@repo/types';
 import { randomUUID } from 'node:crypto';
+import { Inject } from '@nestjs/common';
 
 function headerString(value: unknown): string | undefined {
   if (typeof value === 'string') return value;
@@ -38,7 +40,11 @@ function getClientIp(req: Request): string | undefined {
  */
 @Injectable()
 export class ContextMiddleware implements NestMiddleware {
-  constructor(private readonly als: AsyncLocalStorage<RequestContext>) {}
+  constructor(
+    private readonly als: AsyncLocalStorage<RequestContext>,
+    @Inject(CONTEXT_RUNTIME_CONFIG_TOKEN)
+    private readonly config: ContextRuntimeConfig,
+  ) {}
 
   use(req: Request, res: Response, next: NextFunction): void {
     // Extract or generate request ID for correlation
@@ -62,7 +68,7 @@ export class ContextMiddleware implements NestMiddleware {
       startTime: Date.now(),
       // user, claims, transactions - populated later by guards/services
     };
-    if (process.env.CONTEXT_EXPOSE_RAW_REQUEST === 'true') {
+    if (this.config.exposeRawRequest) {
       context.getRequest = () => req;
     }
 

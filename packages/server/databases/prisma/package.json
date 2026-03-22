@@ -6,6 +6,7 @@
   "dependencies": {
     "@repo/types": "workspace:*",
     "@repo/ports": "workspace:*",
+    "@repo/config": "workspace:*",
     "@repo/constants": "workspace:*",
     "@paralleldrive/cuid2": "^3.0.4",
     "@prisma/adapter-pg": "^7.0.0",

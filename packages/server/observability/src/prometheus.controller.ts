@@ -1,8 +1,11 @@
 import { Controller, Get, Header, Inject, Req, Res } from '@nestjs/common';
+import {
+  OBSERVABILITY_RUNTIME_CONFIG_TOKEN,
+  type ObservabilityRuntimeConfig,
+} from '@repo/config';
 import { SkipHttpResponseEnvelope } from '@repo/decorators';
 import type { AppRequest, Response } from '@repo/types';
 import { PROMETHEUS_PORT_TOKEN, PrometheusPort } from '@repo/ports';
-import { ConfigService } from '@nestjs/config';
 
 interface MetricsUser {
   user: string;
@@ -14,11 +17,12 @@ export class PrometheusController {
   private readonly auth: MetricsUser;
   constructor(
     @Inject(PROMETHEUS_PORT_TOKEN) private readonly prometheusService: PrometheusPort,
-    private readonly config: ConfigService,
+    @Inject(OBSERVABILITY_RUNTIME_CONFIG_TOKEN)
+    private readonly config: ObservabilityRuntimeConfig,
   ) {
     this.auth = {
-      user: this.config.get<string>('GRAFANA_METRICS_USER', ''),
-      pass: this.config.get<string>('GRAFANA_METRICS_PASSWORD', ''),
+      user: this.config.metricsAuth.user ?? '',
+      pass: this.config.metricsAuth.pass ?? '',
     };
   }
 

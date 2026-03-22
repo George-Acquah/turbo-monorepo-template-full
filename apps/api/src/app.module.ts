@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ServerConfigModule } from '@repo/config';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { AuthCoreModule } from '@repo/core';
 import { AppContextModule } from '@repo/context';
@@ -16,10 +16,8 @@ import { ALL_PRODUCER_QUEUE_CONFIGS } from './configs/queues.config';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      cache: true,
-      expandVariables: true,
+    ServerConfigModule.forRoot({
+      runtime: 'api',
     }),
     AppContextModule,
     ObservabilityModule,
