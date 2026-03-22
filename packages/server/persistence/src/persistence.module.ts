@@ -5,15 +5,25 @@ import {
   PRISMA_TRANSACTION_PORT_TOKEN,
   TRANSACTION_PORT_TOKEN,
 } from '@repo/ports';
+import { MongoNotificationsStoreModule, MongoSearchStoreModule } from '@repo/mongo';
 import {
   PrismaAuthStoreModule,
+  PrismaAuditStoreModule,
   PrismaEventsStoreModule,
+  PrismaFilesStoreModule,
   PrismaModule,
+  PrismaPaymentsStoreModule,
 } from '@repo/prisma';
 
 export interface PersistenceModuleOptions {
+  users?: boolean;
   auth?: boolean;
   events?: boolean;
+  audit?: boolean;
+  files?: boolean;
+  payments?: boolean;
+  notifications?: boolean;
+  search?: boolean;
   transactions?: boolean;
 }
 
@@ -21,19 +31,31 @@ export interface PersistenceModuleOptions {
 @Module({})
 export class PersistenceModule {
   static forRoot(options: PersistenceModuleOptions = {}): DynamicModule {
-    const includeAuth = options.auth ?? false;
+    const includeUsers = options.users ?? options.auth ?? false;
     const includeEvents = options.events ?? false;
+    const includeAudit = options.audit ?? false;
+    const includeFiles = options.files ?? false;
+    const includePayments = options.payments ?? false;
+    const includeNotifications = options.notifications ?? false;
+    const includeSearch = options.search ?? false;
     const includeTransactions = options.transactions ?? true;
 
     const imports: Array<Type<unknown> | DynamicModule> = [];
     const providers: Provider[] = [];
     const exports: symbol[] = [];
 
-    if (includeAuth || includeEvents || includeTransactions) {
+    if (
+      includeUsers ||
+      includeEvents ||
+      includeAudit ||
+      includeFiles ||
+      includePayments ||
+      includeTransactions
+    ) {
       imports.push(PrismaModule);
     }
 
-    if (includeAuth) {
+    if (includeUsers) {
       imports.push(PrismaAuthStoreModule);
       providers.push({
         provide: AUTH_REPO_TOKEN,
@@ -44,6 +66,26 @@ export class PersistenceModule {
 
     if (includeEvents) {
       imports.push(PrismaEventsStoreModule);
+    }
+
+    if (includeAudit) {
+      imports.push(PrismaAuditStoreModule);
+    }
+
+    if (includeFiles) {
+      imports.push(PrismaFilesStoreModule);
+    }
+
+    if (includePayments) {
+      imports.push(PrismaPaymentsStoreModule);
+    }
+
+    if (includeNotifications) {
+      imports.push(MongoNotificationsStoreModule);
+    }
+
+    if (includeSearch) {
+      imports.push(MongoSearchStoreModule);
     }
 
     if (includeTransactions) {

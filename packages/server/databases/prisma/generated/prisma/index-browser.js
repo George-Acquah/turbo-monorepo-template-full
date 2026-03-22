@@ -355,139 +355,6 @@ exports.Prisma.BatchImageScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
-exports.Prisma.NotificationTemplateScalarFieldEnum = {
-  id: 'id',
-  name: 'name',
-  slug: 'slug',
-  type: 'type',
-  channels: 'channels',
-  emailSubject: 'emailSubject',
-  emailHtml: 'emailHtml',
-  emailText: 'emailText',
-  smsBody: 'smsBody',
-  pushTitle: 'pushTitle',
-  pushBody: 'pushBody',
-  pushData: 'pushData',
-  inAppTitle: 'inAppTitle',
-  inAppBody: 'inAppBody',
-  inAppAction: 'inAppAction',
-  slackMessage: 'slackMessage',
-  telegramMessage: 'telegramMessage',
-  whatsappTemplateId: 'whatsappTemplateId',
-  whatsappParams: 'whatsappParams',
-  variables: 'variables',
-  isActive: 'isActive',
-  description: 'description',
-  metadata: 'metadata',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
-};
-
-exports.Prisma.NotificationScalarFieldEnum = {
-  id: 'id',
-  type: 'type',
-  channel: 'channel',
-  templateId: 'templateId',
-  userId: 'userId',
-  recipientEmail: 'recipientEmail',
-  recipientPhone: 'recipientPhone',
-  recipientDevice: 'recipientDevice',
-  recipientSlack: 'recipientSlack',
-  recipientTelegram: 'recipientTelegram',
-  subject: 'subject',
-  title: 'title',
-  body: 'body',
-  htmlBody: 'htmlBody',
-  data: 'data',
-  orderId: 'orderId',
-  batchId: 'batchId',
-  paymentId: 'paymentId',
-  status: 'status',
-  scheduledAt: 'scheduledAt',
-  queuedAt: 'queuedAt',
-  sentAt: 'sentAt',
-  deliveredAt: 'deliveredAt',
-  openedAt: 'openedAt',
-  clickedAt: 'clickedAt',
-  failedAt: 'failedAt',
-  retryCount: 'retryCount',
-  maxRetries: 'maxRetries',
-  nextRetryAt: 'nextRetryAt',
-  failureCode: 'failureCode',
-  failureMessage: 'failureMessage',
-  providerId: 'providerId',
-  providerResponse: 'providerResponse',
-  metadata: 'metadata',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
-exports.Prisma.NotificationLogScalarFieldEnum = {
-  id: 'id',
-  notificationId: 'notificationId',
-  attemptNumber: 'attemptNumber',
-  status: 'status',
-  providerId: 'providerId',
-  providerResponse: 'providerResponse',
-  failureCode: 'failureCode',
-  failureMessage: 'failureMessage',
-  createdAt: 'createdAt'
-};
-
-exports.Prisma.InAppNotificationScalarFieldEnum = {
-  id: 'id',
-  userId: 'userId',
-  type: 'type',
-  title: 'title',
-  body: 'body',
-  actionUrl: 'actionUrl',
-  imageUrl: 'imageUrl',
-  orderId: 'orderId',
-  batchId: 'batchId',
-  isRead: 'isRead',
-  readAt: 'readAt',
-  isDismissed: 'isDismissed',
-  dismissedAt: 'dismissedAt',
-  expiresAt: 'expiresAt',
-  metadata: 'metadata',
-  createdAt: 'createdAt'
-};
-
-exports.Prisma.PushDeviceScalarFieldEnum = {
-  id: 'id',
-  userId: 'userId',
-  token: 'token',
-  platform: 'platform',
-  deviceId: 'deviceId',
-  deviceModel: 'deviceModel',
-  osVersion: 'osVersion',
-  appVersion: 'appVersion',
-  isActive: 'isActive',
-  lastActiveAt: 'lastActiveAt',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
-exports.Prisma.NotificationConfigScalarFieldEnum = {
-  id: 'id',
-  channel: 'channel',
-  provider: 'provider',
-  apiKey: 'apiKey',
-  apiSecret: 'apiSecret',
-  fromEmail: 'fromEmail',
-  fromName: 'fromName',
-  fromPhone: 'fromPhone',
-  slackWebhook: 'slackWebhook',
-  telegramBotToken: 'telegramBotToken',
-  rateLimit: 'rateLimit',
-  dailyLimit: 'dailyLimit',
-  isActive: 'isActive',
-  metadata: 'metadata',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
 exports.Prisma.PaymentScalarFieldEnum = {
   id: 'id',
   orderId: 'orderId',
@@ -628,77 +495,6 @@ exports.Prisma.PaymentConfigScalarFieldEnum = {
   isActive: 'isActive',
   metadata: 'metadata',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
-exports.Prisma.SearchDocumentScalarFieldEnum = {
-  id: 'id',
-  entityType: 'entityType',
-  entityId: 'entityId',
-  title: 'title',
-  description: 'description',
-  content: 'content',
-  tags: 'tags',
-  categoryIds: 'categoryIds',
-  collectionIds: 'collectionIds',
-  brandId: 'brandId',
-  price: 'price',
-  compareAtPrice: 'compareAtPrice',
-  currency: 'currency',
-  rating: 'rating',
-  reviewCount: 'reviewCount',
-  inStock: 'inStock',
-  quantity: 'quantity',
-  viewCount: 'viewCount',
-  salesCount: 'salesCount',
-  wishlistCount: 'wishlistCount',
-  isOnSale: 'isOnSale',
-  isFeatured: 'isFeatured',
-  isNewArrival: 'isNewArrival',
-  flashSaleId: 'flashSaleId',
-  imageUrl: 'imageUrl',
-  thumbnailUrl: 'thumbnailUrl',
-  slug: 'slug',
-  isActive: 'isActive',
-  boost: 'boost',
-  metadata: 'metadata',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  indexedAt: 'indexedAt'
-};
-
-exports.Prisma.SearchSynonymScalarFieldEnum = {
-  id: 'id',
-  term: 'term',
-  synonyms: 'synonyms',
-  bidirectional: 'bidirectional',
-  isActive: 'isActive',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
-exports.Prisma.SearchQueryScalarFieldEnum = {
-  id: 'id',
-  query: 'query',
-  normalizedQuery: 'normalizedQuery',
-  userId: 'userId',
-  sessionId: 'sessionId',
-  resultCount: 'resultCount',
-  clickedIds: 'clickedIds',
-  filters: 'filters',
-  createdAt: 'createdAt'
-};
-
-exports.Prisma.PopularSearchScalarFieldEnum = {
-  id: 'id',
-  query: 'query',
-  searchCount: 'searchCount',
-  clickCount: 'clickCount',
-  conversionCount: 'conversionCount',
-  score: 'score',
-  displayText: 'displayText',
-  isActive: 'isActive',
-  lastSearchedAt: 'lastSearchedAt',
   updatedAt: 'updatedAt'
 };
 
@@ -899,26 +695,6 @@ exports.FileVisibility = exports.$Enums.FileVisibility = {
   SIGNED: 'SIGNED'
 };
 
-exports.NotificationChannel = exports.$Enums.NotificationChannel = {
-  EMAIL: 'EMAIL',
-  SMS: 'SMS',
-  PUSH: 'PUSH',
-  IN_APP: 'IN_APP',
-  SLACK: 'SLACK',
-  TELEGRAM: 'TELEGRAM',
-  WHATSAPP: 'WHATSAPP'
-};
-
-exports.NotificationStatus = exports.$Enums.NotificationStatus = {
-  PENDING: 'PENDING',
-  QUEUED: 'QUEUED',
-  SENDING: 'SENDING',
-  SENT: 'SENT',
-  DELIVERED: 'DELIVERED',
-  FAILED: 'FAILED',
-  BOUNCED: 'BOUNCED'
-};
-
 exports.PaymentProvider = exports.$Enums.PaymentProvider = {
   PAYSTACK: 'PAYSTACK',
   FLUTTERWAVE: 'FLUTTERWAVE',
@@ -964,13 +740,6 @@ exports.WebhookEventStatus = exports.$Enums.WebhookEventStatus = {
   SKIPPED: 'SKIPPED'
 };
 
-exports.SearchEntityType = exports.$Enums.SearchEntityType = {
-  PRODUCT: 'PRODUCT',
-  COLLECTION: 'COLLECTION',
-  CATEGORY: 'CATEGORY',
-  BRAND: 'BRAND'
-};
-
 exports.UserRole = exports.$Enums.UserRole = {
   CUSTOMER: 'CUSTOMER',
   ADMIN: 'ADMIN',
@@ -1005,22 +774,12 @@ exports.Prisma.ModelName = {
   File: 'File',
   FileUpload: 'FileUpload',
   BatchImage: 'BatchImage',
-  NotificationTemplate: 'NotificationTemplate',
-  Notification: 'Notification',
-  NotificationLog: 'NotificationLog',
-  InAppNotification: 'InAppNotification',
-  PushDevice: 'PushDevice',
-  NotificationConfig: 'NotificationConfig',
   Payment: 'Payment',
   PaymentAttempt: 'PaymentAttempt',
   Refund: 'Refund',
   WebhookEvent: 'WebhookEvent',
   SavedPaymentMethod: 'SavedPaymentMethod',
   PaymentConfig: 'PaymentConfig',
-  SearchDocument: 'SearchDocument',
-  SearchSynonym: 'SearchSynonym',
-  SearchQuery: 'SearchQuery',
-  PopularSearch: 'PopularSearch',
   User: 'User',
   Address: 'Address',
   UserAuthProvider: 'UserAuthProvider',

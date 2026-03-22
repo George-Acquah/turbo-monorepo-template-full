@@ -1,11 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { IdPrefixes } from '@repo/constants';
-import { IdempotencyDecision, IdempotencyPort, METRICS_PORT_TOKEN, MetricsPort } from '@repo/ports';
+import {
+  CONTEXT_TOKEN,
+  type ContextPort,
+  IdempotencyDecision,
+  IdempotencyPort,
+  METRICS_PORT_TOKEN,
+  MetricsPort,
+} from '@repo/ports';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { Inject, Optional } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
 import { Prisma } from '../../../generated/prisma';
 import { generateId } from '../../utils/generate-id';
+import { resolvePrismaClient } from '../../utils/prisma-client-resolver';
+import { toInputJson } from '../../utils/prisma-mappers';
 
 @Injectable()
 export class PrismaIdempotencyAdapter implements IdempotencyPort {
@@ -14,6 +23,7 @@ export class PrismaIdempotencyAdapter implements IdempotencyPort {
     @Optional()
     @Inject(METRICS_PORT_TOKEN)
     private readonly metrics?: MetricsPort,
+    @Optional() @Inject(CONTEXT_TOKEN) private readonly context?: ContextPort,
   ) {}
 
   async begin({
@@ -88,10 +98,10 @@ export class PrismaIdempotencyAdapter implements IdempotencyPort {
     tx?: unknown;
   }): Promise<IdempotencyDecision> {
     const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
+    const client = resolvePrismaClient(this.prisma, this.context, tx);
 
     try {
       await this.metrics?.time('idempotency.insert.duration', { scope }, () => {
-        const client = (tx as Prisma.TransactionClient) || this.prisma;
         return client.idempotencyKey.create({
           data: {
             id: generateId(IdPrefixes.IDEMPOTENCY_KEY),
@@ -108,7 +118,6 @@ export class PrismaIdempotencyAdapter implements IdempotencyPort {
     } catch (e: any) {
       if (e.code !== 'P2002') throw e;
 
-      const client = (tx as Prisma.TransactionClient) || this.prisma;
       const existing = await client.idempotencyKey.findUnique({
         where: { scope_key: { scope, key } },
       });
@@ -121,7 +130,7 @@ export class PrismaIdempotencyAdapter implements IdempotencyPort {
 
       if (existing.status === 'IN_PROGRESS' && existing.expiresAt < new Date()) {
         const claimed = await this.metrics?.time('idempotency.takeover.duration', { scope }, () =>
-          this.prisma.db.idempotencyKey.updateMany({
+          client.idempotencyKey.updateMany({
             where: { scope, key, status: 'IN_PROGRESS', expiresAt: { lt: new Date() } },
             data: { expiresAt, completedAt: null, statusCode: null },
           }),
@@ -153,14 +162,16 @@ export class PrismaIdempotencyAdapter implements IdempotencyPort {
     statusCode?: number;
     tx?: unknown;
   }): Promise<void> {
-    const client = (tx as Prisma.TransactionClient) || this.prisma;
+    const client = resolvePrismaClient(this.prisma, this.context, tx);
     await client.idempotencyKey.update({
       where: {
         scope_key: { scope, key },
       },
       data: {
         status: 'COMPLETED',
-        responseData: responseData as any,
+        responseData: toInputJson(
+          responseData === undefined ? undefined : (responseData as Record<string, unknown> | null),
+        ),
         statusCode,
         completedAt: new Date(),
       },
@@ -178,14 +189,14 @@ export class PrismaIdempotencyAdapter implements IdempotencyPort {
     error: string;
     tx?: unknown;
   }): Promise<void> {
-    const client = (tx as Prisma.TransactionClient) || this.prisma;
+    const client = resolvePrismaClient(this.prisma, this.context, tx);
     await client.idempotencyKey.update({
       where: {
         scope_key: { scope, key },
       },
       data: {
         status: 'FAILED',
-        responseData: { error } as any,
+        responseData: { error } as Prisma.InputJsonValue,
         completedAt: new Date(),
       },
     });

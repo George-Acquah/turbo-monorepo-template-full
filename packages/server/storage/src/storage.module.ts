@@ -2,6 +2,7 @@ import { Global, Module, type Provider } from '@nestjs/common';
 import { STORAGE_RUNTIME_CONFIG_TOKEN, type StorageRuntimeConfig } from '@repo/config';
 import { STORAGE_PORT_TOKEN, type StoragePort } from '@repo/ports';
 import { LocalStorageAdapter } from './providers/local/local-storage.adapter';
+import { S3StorageAdapter } from './providers/s3/s3-storage.adapter';
 
 const storageProvider: Provider<StoragePort> = {
   provide: STORAGE_PORT_TOKEN,
@@ -13,9 +14,7 @@ const storageProvider: Provider<StoragePort> = {
       case 's3':
       case 'r2':
       case 'supabase':
-        throw new Error(
-          `Storage provider "${config.provider}" is configured but not implemented yet. Add a matching adapter in @repo/storage before enabling it.`,
-        );
+        return new S3StorageAdapter(config);
       default: {
         const exhaustiveConfig: never = config.provider;
         throw new Error(`Unsupported storage provider: ${String(exhaustiveConfig)}`);

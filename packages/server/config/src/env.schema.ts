@@ -462,7 +462,7 @@ export function validateServerEnv(
         errors,
       );
     }
-    if (!storage.s3.endpoint && storage.provider !== 'supabase') {
+    if (!storage.s3.endpoint && (storage.provider === 'r2' || storage.provider === 'supabase')) {
       flattenValidationErrors(
         'STORAGE_S3_ENDPOINT',
         `STORAGE_S3_ENDPOINT is required when STORAGE_PROVIDER=${storage.provider}`,

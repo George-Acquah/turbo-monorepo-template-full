@@ -51,30 +51,6 @@ export const MODEL_TO_TABLE = {
     "table": "product_images",
     "schema": "files"
   },
-  "NotificationTemplate": {
-    "table": "notification_templates",
-    "schema": "notifications"
-  },
-  "Notification": {
-    "table": "notifications",
-    "schema": "notifications"
-  },
-  "NotificationLog": {
-    "table": "notification_logs",
-    "schema": "notifications"
-  },
-  "InAppNotification": {
-    "table": "in_app_notifications",
-    "schema": "notifications"
-  },
-  "PushDevice": {
-    "table": "push_devices",
-    "schema": "notifications"
-  },
-  "NotificationConfig": {
-    "table": "notification_configs",
-    "schema": "notifications"
-  },
   "Payment": {
     "table": "payments",
     "schema": "payments"
@@ -98,22 +74,6 @@ export const MODEL_TO_TABLE = {
   "PaymentConfig": {
     "table": "payment_configs",
     "schema": "payments"
-  },
-  "SearchDocument": {
-    "table": "search_documents",
-    "schema": "search"
-  },
-  "SearchSynonym": {
-    "table": "search_synonyms",
-    "schema": "search"
-  },
-  "SearchQuery": {
-    "table": "search_queries",
-    "schema": "search"
-  },
-  "PopularSearch": {
-    "table": "popular_searches",
-    "schema": "search"
   },
   "User": {
     "table": "users",
@@ -157,22 +117,12 @@ export const TABLE_TO_MODEL = {
   "files": "File",
   "file_uploads": "FileUpload",
   "product_images": "ProductImage",
-  "notification_templates": "NotificationTemplate",
-  "notifications": "Notification",
-  "notification_logs": "NotificationLog",
-  "in_app_notifications": "InAppNotification",
-  "push_devices": "PushDevice",
-  "notification_configs": "NotificationConfig",
   "payments": "Payment",
   "payment_attempts": "PaymentAttempt",
   "refunds": "Refund",
   "webhook_events": "WebhookEvent",
   "saved_payment_methods": "SavedPaymentMethod",
   "payment_configs": "PaymentConfig",
-  "search_documents": "SearchDocument",
-  "search_synonyms": "SearchSynonym",
-  "search_queries": "SearchQuery",
-  "popular_searches": "PopularSearch",
   "users": "User",
   "addresses": "Address",
   "user_auth_providers": "UserAuthProvider",
@@ -182,5 +132,5 @@ export const TABLE_TO_MODEL = {
   "email_verification_tokens": "EmailVerificationToken"
 } as const;
 
-export type PrismaModelName = 'Address' | 'ApiLog' | 'AuditLog' | 'DeadLetterEvent' | 'EmailVerificationToken' | 'File' | 'FileUpload' | 'IdempotencyKey' | 'InAppNotification' | 'JobLog' | 'LoginAttempt' | 'Notification' | 'NotificationConfig' | 'NotificationLog' | 'NotificationTemplate' | 'OutboxEvent' | 'PasswordResetToken' | 'Payment' | 'PaymentAttempt' | 'PaymentConfig' | 'PopularSearch' | 'ProductImage' | 'PushDevice' | 'Refund' | 'SagaState' | 'SavedPaymentMethod' | 'SearchDocument' | 'SearchQuery' | 'SearchSynonym' | 'SystemEvent' | 'User' | 'UserAuthProvider' | 'UserPreference' | 'UserSession' | 'WebhookEvent';
-export type DbTableName = 'addresses' | 'api_logs' | 'audit_logs' | 'dead_letter_events' | 'email_verification_tokens' | 'file_uploads' | 'files' | 'idempotency_keys' | 'in_app_notifications' | 'job_logs' | 'login_attempts' | 'notification_configs' | 'notification_logs' | 'notification_templates' | 'notifications' | 'outbox_events' | 'password_reset_tokens' | 'payment_attempts' | 'payment_configs' | 'payments' | 'popular_searches' | 'product_images' | 'push_devices' | 'refunds' | 'saga_states' | 'saved_payment_methods' | 'search_documents' | 'search_queries' | 'search_synonyms' | 'system_events' | 'user_auth_providers' | 'user_preferences' | 'user_sessions' | 'users' | 'webhook_events';
+export type PrismaModelName = 'Address' | 'ApiLog' | 'AuditLog' | 'DeadLetterEvent' | 'EmailVerificationToken' | 'File' | 'FileUpload' | 'IdempotencyKey' | 'JobLog' | 'LoginAttempt' | 'OutboxEvent' | 'PasswordResetToken' | 'Payment' | 'PaymentAttempt' | 'PaymentConfig' | 'ProductImage' | 'Refund' | 'SagaState' | 'SavedPaymentMethod' | 'SystemEvent' | 'User' | 'UserAuthProvider' | 'UserPreference' | 'UserSession' | 'WebhookEvent';
+export type DbTableName = 'addresses' | 'api_logs' | 'audit_logs' | 'dead_letter_events' | 'email_verification_tokens' | 'file_uploads' | 'files' | 'idempotency_keys' | 'job_logs' | 'login_attempts' | 'outbox_events' | 'password_reset_tokens' | 'payment_attempts' | 'payment_configs' | 'payments' | 'product_images' | 'refunds' | 'saga_states' | 'saved_payment_methods' | 'system_events' | 'user_auth_providers' | 'user_preferences' | 'user_sessions' | 'users' | 'webhook_events';

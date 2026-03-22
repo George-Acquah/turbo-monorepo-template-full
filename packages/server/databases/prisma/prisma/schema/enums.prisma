@@ -90,33 +90,6 @@ enum WebhookEventStatus {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Notification Enums
-// ─────────────────────────────────────────────────────────────────────────────
-enum NotificationChannel {
-    EMAIL
-    SMS
-    PUSH
-    IN_APP
-    SLACK
-    TELEGRAM
-    WHATSAPP
-
-    @@schema("notifications")
-}
-
-enum NotificationStatus {
-    PENDING
-    QUEUED
-    SENDING
-    SENT
-    DELIVERED
-    FAILED
-    BOUNCED
-
-    @@schema("notifications")
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // File Enums
 // ─────────────────────────────────────────────────────────────────────────────
 enum FileType {

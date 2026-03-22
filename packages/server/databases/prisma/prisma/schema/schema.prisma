@@ -12,5 +12,5 @@ generator client {
 datasource db {
   provider = "postgresql"
   // All schemas used in the database - one per bounded context
-  schemas  = ["users", "payments", "notifications", "files", "audit", "events", "search"]
+  schemas  = ["users", "payments", "files", "audit", "events"]
 }

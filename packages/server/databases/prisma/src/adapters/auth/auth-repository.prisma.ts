@@ -1,7 +1,15 @@
-import { Injectable } from '@nestjs/common';
-import { AuthRepositoryPort, type AuthUser, type ProviderIdentity } from '@repo/ports';
+import { Inject, Injectable, Optional } from '@nestjs/common';
+import {
+  AuthRepositoryPort,
+  type AuthUser,
+  type ContextPort,
+  CONTEXT_TOKEN,
+  type DatabaseTx,
+  type ProviderIdentity,
+} from '@repo/ports';
 import { PrismaService } from '../../prisma.service';
 import { generateId } from '../../utils/generate-id';
+import { resolvePrismaClient } from '../../utils/prisma-client-resolver';
 
 /**
  * Prisma adapter for AuthRepositoryPort.
@@ -15,14 +23,17 @@ import { generateId } from '../../utils/generate-id';
  */
 @Injectable()
 export class AuthRepositoryPrismaAdapter implements AuthRepositoryPort {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() @Inject(CONTEXT_TOKEN) private readonly context?: ContextPort,
+  ) {}
 
   // ----------------------------
   // Users
   // ----------------------------
 
   async findUserById(id: string): Promise<AuthUser | null> {
-    const u = await this.prisma.db.user.findUnique({
+    const u = await resolvePrismaClient(this.prisma, this.context).user.findUnique({
       where: { id },
       select: this.userSelect(),
     });
@@ -31,7 +42,7 @@ export class AuthRepositoryPrismaAdapter implements AuthRepositoryPort {
   }
 
   async findUserByEmail(email: string): Promise<AuthUser | null> {
-    const u = await this.prisma.db.user.findFirst({
+    const u = await resolvePrismaClient(this.prisma, this.context).user.findFirst({
       where: { email },
       select: this.userSelect(),
     });
@@ -44,7 +55,7 @@ export class AuthRepositoryPrismaAdapter implements AuthRepositoryPort {
   // ----------------------------
 
   async findUserByProviderIdentity(identity: ProviderIdentity): Promise<AuthUser | null> {
-    const link = await this.prisma.db.userAuthProvider.findFirst({
+    const link = await resolvePrismaClient(this.prisma, this.context).userAuthProvider.findFirst({
       where: {
         provider: identity.provider, // enum AuthProvider
         providerId: identity.providerId, // schema field name
@@ -60,11 +71,12 @@ export class AuthRepositoryPrismaAdapter implements AuthRepositoryPort {
   async linkProviderIdentity(params: {
     userId: string;
     identity: ProviderIdentity;
-  }): Promise<void> {
+  }, tx?: DatabaseTx): Promise<void> {
     const { userId, identity } = params;
+    const client = resolvePrismaClient(this.prisma, this.context, tx);
 
     // schema has @@unique([provider, providerId])
-    await this.prisma.db.userAuthProvider.upsert({
+    await client.userAuthProvider.upsert({
       where: {
         provider_providerId: {
           provider: identity.provider,
@@ -111,8 +123,9 @@ export class AuthRepositoryPrismaAdapter implements AuthRepositoryPort {
     expiresAt: Date;
     ipAddress?: string | null;
     userAgent?: string | null;
-  }): Promise<void> {
+  }, tx?: DatabaseTx): Promise<void> {
     const { userId, deviceId, refreshTokenHash, jti, expiresAt, ipAddress, userAgent } = params;
+    const client = resolvePrismaClient(this.prisma, this.context, tx);
 
     // TEMP COMPAT:
     // - token = refreshTokenHash (unique)
@@ -122,14 +135,14 @@ export class AuthRepositoryPrismaAdapter implements AuthRepositoryPort {
 
     // delete any prior session for same user+deviceId (no unique constraint yet)
     // This keeps 1 active refresh session per device.
-    await this.prisma.db.userSession.deleteMany({
+    await client.userSession.deleteMany({
       where: {
         userId,
         deviceInfo: { startsWith: `device:${deviceId}|` },
       },
     });
 
-    await this.prisma.db.userSession.create({
+    await client.userSession.create({
       data: {
         id: generateId('uss'),
         userId,
@@ -148,10 +161,11 @@ export class AuthRepositoryPrismaAdapter implements AuthRepositoryPort {
   async getRefreshSession(params: {
     userId: string;
     deviceId: string;
-  }): Promise<{ refreshTokenHash: string; jti: string; expiresAt: Date } | null> {
+  }, tx?: DatabaseTx): Promise<{ refreshTokenHash: string; jti: string; expiresAt: Date } | null> {
     const { userId, deviceId } = params;
+    const client = resolvePrismaClient(this.prisma, this.context, tx);
 
-    const s = await this.prisma.db.userSession.findFirst({
+    const s = await client.userSession.findFirst({
       where: {
         userId,
         deviceInfo: { startsWith: `device:${deviceId}|` },
@@ -174,10 +188,11 @@ export class AuthRepositoryPrismaAdapter implements AuthRepositoryPort {
     };
   }
 
-  async revokeRefreshSession(params: { userId: string; deviceId: string }): Promise<void> {
+  async revokeRefreshSession(params: { userId: string; deviceId: string }, tx?: DatabaseTx): Promise<void> {
     const { userId, deviceId } = params;
+    const client = resolvePrismaClient(this.prisma, this.context, tx);
 
-    await this.prisma.db.userSession.deleteMany({
+    await client.userSession.deleteMany({
       where: {
         userId,
         deviceInfo: { startsWith: `device:${deviceId}|` },
@@ -189,8 +204,13 @@ export class AuthRepositoryPrismaAdapter implements AuthRepositoryPort {
   // Login tracking (optional but in your schema)
   // ----------------------------
 
-  async recordLoginSuccess(params: { userId: string; ipAddress?: string | null }): Promise<void> {
-    await this.prisma.db.user.update({
+  async recordLoginSuccess(
+    params: { userId: string; ipAddress?: string | null },
+    tx?: DatabaseTx,
+  ): Promise<void> {
+    const client = resolvePrismaClient(this.prisma, this.context, tx);
+
+    await client.user.update({
       where: { id: params.userId },
       data: {
         lastLoginAt: new Date(),
@@ -202,9 +222,9 @@ export class AuthRepositoryPrismaAdapter implements AuthRepositoryPort {
     });
   }
 
-  async recordLoginFailure(params: { userId: string }): Promise<void> {
+  async recordLoginFailure(params: { userId: string }, tx?: DatabaseTx): Promise<void> {
     // basic increment; lockout policy will live in core
-    await this.prisma.db.user.update({
+    await resolvePrismaClient(this.prisma, this.context, tx).user.update({
       where: { id: params.userId },
       data: {
         failedLoginCount: { increment: 1 },

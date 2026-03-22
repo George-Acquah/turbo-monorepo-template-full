@@ -4,6 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { SagaStatePort, SagaState } from '@repo/ports';
 import { PrismaService } from '../../prisma.service';
 import { Prisma } from '../../../generated/prisma';
+import { resolvePrismaClient } from '../../utils/prisma-client-resolver';
 
 @Injectable()
 export class PrismaSagaStateAdapter implements SagaStatePort {
@@ -14,25 +15,25 @@ export class PrismaSagaStateAdapter implements SagaStatePort {
   }
 
   async saveLifecycle(state: SagaState): Promise<void> {
-    await this.prisma.db.sagaState.upsert(this.toUpsert(state));
+    await resolvePrismaClient(this.prisma).sagaState.upsert(this.toUpsert(state));
   }
 
   async updateCompensated(correlationId: string): Promise<void> {
-    await this.prisma.db.sagaState.update({
+    await resolvePrismaClient(this.prisma).sagaState.update({
       where: { correlationId },
       data: { status: 'COMPENSATED', completedAt: new Date() },
     });
   }
 
   async updateCompensating(correlationId: string): Promise<void> {
-    await this.prisma.db.sagaState.update({
+    await resolvePrismaClient(this.prisma).sagaState.update({
       where: { correlationId },
       data: { status: 'COMPENSATING' },
     });
   }
 
   async findByCorrelationId(correlationId: string): Promise<SagaState | null> {
-    const row = await this.prisma.db.sagaState.findUnique({
+    const row = await resolvePrismaClient(this.prisma).sagaState.findUnique({
       where: { correlationId },
     });
 
@@ -40,7 +41,7 @@ export class PrismaSagaStateAdapter implements SagaStatePort {
   }
 
   async findByType(sagaType: string): Promise<SagaState[]> {
-    return this.prisma.db.sagaState.findMany({
+    return resolvePrismaClient(this.prisma).sagaState.findMany({
       where: { sagaType },
       orderBy: { startedAt: 'desc' },
     }) as Promise<SagaState[]>;

@@ -1,18 +1,21 @@
 import { IdPrefixes } from '@repo/constants';
-import { OutboxPort, OutboxEvent } from '@repo/ports';
-import { Injectable } from '@nestjs/common';
+import { CONTEXT_TOKEN, type ContextPort, OutboxEvent, OutboxPort } from '@repo/ports';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
 import { Prisma } from '../../../generated/prisma';
 import { generateId } from '../../utils/generate-id';
+import { resolvePrismaClient } from '../../utils/prisma-client-resolver';
 
 @Injectable()
 export class PrismaOutboxAdapter implements OutboxPort {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() @Inject(CONTEXT_TOKEN) private readonly context?: ContextPort,
+  ) {}
 
   async enqueueTx(event: OutboxEvent, tx?: Prisma.TransactionClient): Promise<void> {
-    const id = generateId(IdPrefixes.OUTBOX_EVENT);
-
-    const client = tx ?? this.prisma.db;
+    const client = resolvePrismaClient(this.prisma, this.context, tx);
+    const id = event.id || generateId(IdPrefixes.OUTBOX_EVENT);
 
     await client.outboxEvent.create({
       data: {
@@ -28,9 +31,10 @@ export class PrismaOutboxAdapter implements OutboxPort {
     return await this.prisma.db.$transaction(async (tx) => {
       const events = await tx.outboxEvent.findMany({
         where: {
-          status: 'PENDING',
-          nextRetryAt: { lte: new Date() },
-          maxAttempts: { lt: 5 },
+          status: {
+            in: ['PENDING', 'FAILED'],
+          },
+          OR: [{ nextRetryAt: null }, { nextRetryAt: { lte: new Date() } }],
         },
         orderBy: { createdAt: 'asc' },
         take: limit,
@@ -44,8 +48,7 @@ export class PrismaOutboxAdapter implements OutboxPort {
         },
         data: {
           status: 'PROCESSING',
-          // lockedAt: new Date(),
-          maxAttempts: { increment: 1 },
+          attempts: { increment: 1 },
         },
       });
 
@@ -54,7 +57,7 @@ export class PrismaOutboxAdapter implements OutboxPort {
   }
 
   async markProcessed(eventId: string): Promise<void> {
-    await this.prisma.db.outboxEvent.update({
+    await resolvePrismaClient(this.prisma, this.context).outboxEvent.update({
       where: { id: eventId },
       data: {
         status: 'PROCESSED',
@@ -63,7 +66,7 @@ export class PrismaOutboxAdapter implements OutboxPort {
     });
   }
   async markFailed(eventId: string, error: string, retryAt?: Date): Promise<void> {
-    await this.prisma.db.outboxEvent.update({
+    await resolvePrismaClient(this.prisma, this.context).outboxEvent.update({
       where: { id: eventId },
       data: {
         status: 'FAILED',
