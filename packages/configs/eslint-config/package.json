@@ -30,6 +30,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "check-types": "tsc --noEmit -p tsconfig.json",
     "clean": "rimraf dist",
     "prepack": "pnpm run build"
   },

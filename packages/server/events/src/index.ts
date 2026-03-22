@@ -1,11 +1,12 @@
 /**
  * @repo/events
- * Event processing infrastructure - processors, sagas, and event publisher
- * This package should only be imported by the main application module
+ * Event processing infrastructure - transport adapters around shared application logic.
  */
 
-// Module
 export * from './events.module';
+export * from './events-workers.module';
 export * from './modules/infra.module';
+export * from './modules/processing.module';
 
 export * from './constants/routing.constants';
+export * from './constants/queue.config';

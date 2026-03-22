@@ -1,0 +1,30 @@
+{
+  "name": "@repo/persistence",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "tsdown",
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "dev": "tsdown --watch",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@repo/mongo": "workspace:*",
+    "@repo/ports": "workspace:*",
+    "@repo/prisma": "workspace:*"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^11.0.1"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "^24.10.0",
+    "tsdown": "^0.20.3"
+  },
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  }
+}

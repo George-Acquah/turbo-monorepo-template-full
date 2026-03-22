@@ -5,11 +5,13 @@
   "private": true,
   "scripts": {
     "build": "tsdown",
+    "check-types": "tsc --noEmit -p tsconfig.json",
     "dev": "tsdown --watch",
     "lint": "eslint src --ext .ts"
   },
   "dependencies": {
     "@repo/ports": "workspace:*",
+    "@repo/redis": "workspace:*",
     "@repo/types": "workspace:*",
     "@repo/constants": "workspace:*",
     "@nestjs/throttler": "^6.4.0"

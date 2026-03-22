@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "rootDir": "../..",
+    "paths": {
+      "@repo/events": ["../../packages/server/events/src/index.ts"],
+      "@repo/persistence": ["../../packages/server/persistence/src/index.ts"]
+    }
+  }
+}

@@ -1,5 +1,5 @@
 import { Controller, Get, Header, Inject, Req, Res } from '@nestjs/common';
-import { SkipApiWrap } from '@repo/decorators';
+import { SkipHttpResponseEnvelope } from '@repo/decorators';
 import type { AppRequest, Response } from '@repo/types';
 import { PROMETHEUS_PORT_TOKEN, PrometheusPort } from '@repo/ports';
 import { ConfigService } from '@nestjs/config';
@@ -23,7 +23,7 @@ export class PrometheusController {
   }
 
   @Get()
-  @SkipApiWrap()
+  @SkipHttpResponseEnvelope()
   @Header('Content-Type', 'text/plain; version=0.0.4; charset=utf-8')
   async getMetrics() {
     // Return the raw string directly
@@ -31,7 +31,7 @@ export class PrometheusController {
   }
 
   @Get('/auth')
-  @SkipApiWrap()
+  @SkipHttpResponseEnvelope()
   async getMetricsProduction(@Req() req: AppRequest, @Res() res: Response) {
     const auth = req.headers.authorization;
 

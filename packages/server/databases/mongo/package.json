@@ -13,6 +13,7 @@
   },
   "scripts": {
     "build": "tsdown",
+    "check-types": "tsc --noEmit -p tsconfig.json",
     "dev": "tsdown --watch",
     "lint": "eslint src --ext .ts"
   },

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectQueue, Job, Processor, Queue } from '@repo/queue';
 
 import { DefaultJobOptions, JobNames, QueueNames } from '@repo/constants';
@@ -18,7 +18,7 @@ export interface OutboxBatchJob {
 
 @Processor(QueueNames.OUTBOX_PROCESSOR)
 @Injectable()
-export class OutboxProcessor extends QueueProcessor<OutboxBatchJob> implements OnModuleInit {
+export class OutboxProcessor extends QueueProcessor<OutboxBatchJob> {
   constructor(
     @InjectQueue(QueueNames.DOMAIN_EVENTS) private readonly eventQueue: Queue,
     @InjectQueue(QueueNames.DEAD_LETTER) private readonly dlqQueue: Queue,
@@ -26,11 +26,6 @@ export class OutboxProcessor extends QueueProcessor<OutboxBatchJob> implements O
     @Inject(METRICS_PORT_TOKEN) private readonly metrics: MetricsPort,
   ) {
     super(OutboxProcessor.name);
-  }
-
-  async onModuleInit() {
-    // Optional: warm start processing once on boot (not scheduling).
-    await this.processPendingEvents();
   }
 
   protected async handle(_job: Job<OutboxBatchJob>): Promise<void> {

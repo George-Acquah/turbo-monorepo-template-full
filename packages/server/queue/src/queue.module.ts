@@ -38,7 +38,6 @@ export class QueueModule {
         BullQueueBus,
         QueueSchedulerService,
         { provide: QUEUE_SCHEDULER_TOKEN, useExisting: QueueSchedulerService },
-
         { provide: QUEUE_REGISTRY_TOKEN, useExisting: BullQueueRegistry },
         { provide: QUEUE_BUS_TOKEN, useExisting: BullQueueBus },
       ],

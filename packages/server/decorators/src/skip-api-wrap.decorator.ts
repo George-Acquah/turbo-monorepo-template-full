@@ -1,5 +1,5 @@
 import { SetMetadata } from '@nestjs/common';
 
-// I added this decorator to skip the global api response interceptor on scraping endpoints for Prometheus
-export const SKIP_API_WRAP_KEY = 'skipApiWrap';
-export const SkipApiWrap = () => SetMetadata(SKIP_API_WRAP_KEY, true);
+export const SKIP_HTTP_RESPONSE_ENVELOPE_KEY = 'skipHttpResponseEnvelope';
+export const SkipHttpResponseEnvelope = () =>
+  SetMetadata(SKIP_HTTP_RESPONSE_ENVELOPE_KEY, true);

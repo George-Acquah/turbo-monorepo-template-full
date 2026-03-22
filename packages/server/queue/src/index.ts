@@ -10,7 +10,7 @@ export * from './base/router-processor.base';
 export * from './scheduler';
 
 // Types
-// export * from './interfaces/queue.interface';
+export type { QueueConfig } from './interfaces/queue.interface';
 
 // Convenience re-exports (BullMQ + Nest BullMQ)
 export { Queue, Job, Worker, type JobsOptions, type RateLimiterOptions } from 'bullmq';

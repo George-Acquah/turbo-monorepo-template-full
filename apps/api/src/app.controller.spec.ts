@@ -15,7 +15,7 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
+    it('should return plain controller data without an HTTP envelope', () => {
       expect(appController.getHello()).toBe('Hello World!');
     });
   });

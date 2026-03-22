@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "nest build",
+    "check-types": "tsc --noEmit -p tsconfig.check.json",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -23,10 +24,13 @@
     "@nestjs/platform-express": "^11.0.1",
     "@repo/context": "workspace:*",
     "@repo/core": "workspace:*",
-    "@repo/mongo": "workspace:*",
+    "@repo/events": "workspace:*",
+    "@repo/filters": "workspace:*",
+    "@repo/interceptor": "workspace:*",
     "@repo/observability": "workspace:*",
+    "@repo/persistence": "workspace:*",
     "@repo/ports": "workspace:*",
-    "@repo/prisma": "workspace:*",
+    "@repo/queue": "workspace:*",
     "@repo/redis": "workspace:*",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
@@ -65,6 +69,21 @@
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "moduleNameMapper": {
+      "^@repo/constants$": "<rootDir>/../../../packages/server/constants/src/index.ts",
+      "^@repo/context$": "<rootDir>/../../../packages/server/context/src/index.ts",
+      "^@repo/decorators$": "<rootDir>/../../../packages/server/decorators/src/index.ts",
+      "^@repo/events$": "<rootDir>/../../../packages/server/events/src/index.ts",
+      "^@repo/filters$": "<rootDir>/../../../packages/server/filters/src/index.ts",
+      "^@repo/interceptor$": "<rootDir>/../../../packages/server/interceptor/src/index.ts",
+      "^@repo/persistence$": "<rootDir>/../../../packages/server/persistence/src/index.ts",
+      "^@repo/ports$": "<rootDir>/../../../packages/server/ports/src/index.ts",
+      "^@repo/queue$": "<rootDir>/../../../packages/server/queue/src/index.ts",
+      "^@repo/redis$": "<rootDir>/../../../packages/server/redis/src/index.ts",
+      "^@repo/types$": "<rootDir>/../../../packages/server/types/src/index.ts",
+      "^@repo/types/express$": "<rootDir>/../../../packages/server/types/src/express.ts",
+      "^@repo/utils$": "<rootDir>/../test-support/repo-utils.ts"
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"

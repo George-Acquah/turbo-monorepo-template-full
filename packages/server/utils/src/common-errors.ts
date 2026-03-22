@@ -2,10 +2,23 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  InternalServerErrorException,
   NotFoundException,
-} from '@nestjs/common/exceptions';
-import { ApiResponse } from '@repo/types';
+} from '@nestjs/common';
 import { LoggerPort } from '@repo/ports';
+import type { HttpExceptionBody } from '@repo/types';
+
+function buildExceptionBody(
+  userMessage: string,
+  error: string,
+  errorCode?: string,
+): HttpExceptionBody {
+  return {
+    message: userMessage,
+    error,
+    errorCode: errorCode ?? null,
+  };
+}
 
 export function handleApiError(
   context: string,
@@ -13,29 +26,31 @@ export function handleApiError(
   userMessage: string,
   logger: LoggerPort,
   errorCode?: string,
-) {
+): never {
   logger.error(
     `${context}: ${err instanceof Error ? err.message : String(err)}`,
     err instanceof Error ? err.stack : undefined,
   );
 
   if (err instanceof ConflictException) {
-    return ApiResponse.conflict(userMessage, { errorCode });
+    throw new ConflictException(buildExceptionBody(userMessage, 'Conflict', errorCode));
   }
 
   if (err instanceof BadRequestException) {
-    return ApiResponse.badRequest(userMessage, { errorCode });
+    throw new BadRequestException(buildExceptionBody(userMessage, 'Bad Request', errorCode));
   }
 
   if (err instanceof NotFoundException) {
-    return ApiResponse.notFound(userMessage, { errorCode });
+    throw new NotFoundException(buildExceptionBody(userMessage, 'Not Found', errorCode));
   }
 
   if (err instanceof ForbiddenException) {
-    return ApiResponse.forbidden(userMessage, { errorCode });
+    throw new ForbiddenException(buildExceptionBody(userMessage, 'Forbidden', errorCode));
   }
 
-  return ApiResponse.internal(userMessage, { errorCode });
+  throw new InternalServerErrorException(
+    buildExceptionBody(userMessage, 'Internal Server Error', errorCode),
+  );
 }
 
 export function handleAppError(

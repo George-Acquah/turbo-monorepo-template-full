@@ -3,7 +3,11 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
+    "build:api": "turbo run build --filter=@repo/api",
+    "build:workers": "turbo run build --filter=@repo/workers",
     "dev": "turbo run dev",
+    "dev:api": "turbo run dev --filter=@repo/api",
+    "dev:workers": "turbo run dev --filter=@repo/workers",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types"

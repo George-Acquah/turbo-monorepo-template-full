@@ -61,6 +61,26 @@ services:
     networks:
       - template-network
 
+  workers:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.Workers
+      target: runner
+    container_name: template-workers-dev
+    env_file:
+      - ../apps/workers/.env
+      - ./.env.api
+    depends_on:
+      prisma:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - template-network
+
 volumes:
   postgres-data:
   mongo-data:

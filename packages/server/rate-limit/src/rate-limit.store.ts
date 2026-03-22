@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { REDIS_CLIENT, RedisKeyPrefixes } from '@repo/constants';
-import type Redis from 'ioredis';
+import type { RedisClient } from '@repo/redis';
 
 export interface TokenBucketResult {
   allowed: boolean;
@@ -17,7 +17,7 @@ export interface TokenBucketResult {
  */
 @Injectable()
 export class RedisRateLimitStore {
-  constructor(@Inject(REDIS_CLIENT) private readonly redis: Redis) {}
+  constructor(@Inject(REDIS_CLIENT) private readonly redis: RedisClient) {}
 
   private readonly script = `
 local key = KEYS[1]

@@ -5,5 +5,16 @@
   "testRegex": ".e2e-spec.ts$",
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^@repo/constants$": "<rootDir>/../../../packages/server/constants/src/index.ts",
+    "^@repo/context$": "<rootDir>/../../../packages/server/context/src/index.ts",
+    "^@repo/decorators$": "<rootDir>/../../../packages/server/decorators/src/index.ts",
+    "^@repo/filters$": "<rootDir>/../../../packages/server/filters/src/index.ts",
+    "^@repo/interceptor$": "<rootDir>/../../../packages/server/interceptor/src/index.ts",
+    "^@repo/ports$": "<rootDir>/../../../packages/server/ports/src/index.ts",
+    "^@repo/types$": "<rootDir>/../../../packages/server/types/src/index.ts",
+    "^@repo/types/express$": "<rootDir>/../../../packages/server/types/src/express.ts",
+    "^@repo/utils$": "<rootDir>/../test-support/repo-utils.ts"
   }
 }

@@ -14,7 +14,7 @@
     "prisma": "latest"
   },
   "scripts": {
-    "typecheck:prisma-config": "tsc -p tsconfig.prisma.json",
+    "check-types": "tsc --noEmit -p tsconfig.json",
     "prisma:generate": "pnpm prisma generate --config ./prisma.config.ts && pnpm run generate:table-names",
     "prisma:reset": "pnpm prisma migrate reset",
     "prisma:migrate:dev": "pnpm prisma migrate dev --config ./prisma.config.ts",

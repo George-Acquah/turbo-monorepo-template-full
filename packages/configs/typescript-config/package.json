@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "license": "MIT",
+  "scripts": {
+    "check-types": "node -e \"process.exit(0)\""
+  },
   "publishConfig": {
     "access": "public"
   }
