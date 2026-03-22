@@ -1,17 +1,15 @@
 import { IdPrefixes } from '@repo/constants';
 import { OutboxEvent, OutboxPort } from '@repo/ports';
 import { Inject, Injectable } from '@nestjs/common';
-import type { ClientSession, Connection } from 'mongoose';
+import type { ClientSession } from 'mongoose';
 import { type MongoDbClient } from '../../mongo-db-client.provider';
-import { getMongoConnectionToken, MONGO_DB_CLIENT_TOKEN } from '../../tokens/mongo.tokens';
+import { MONGO_DB_CLIENT_TOKEN } from '../../tokens/mongo.tokens';
 import { generateId } from '../../utils/generate-id';
+import type { OutboxEventDocument } from '../../schemas';
 
 @Injectable()
 export class MongoOutboxAdapter implements OutboxPort {
-  constructor(
-    @Inject(MONGO_DB_CLIENT_TOKEN) private readonly mongoDb: MongoDbClient,
-    @Inject(getMongoConnectionToken()) private readonly connection: Connection,
-  ) {}
+  constructor(@Inject(MONGO_DB_CLIENT_TOKEN) private readonly mongoDb: MongoDbClient) {}
 
   async enqueueTx(event: OutboxEvent, tx?: unknown): Promise<void> {
     const session = tx as ClientSession | undefined;
@@ -44,38 +42,19 @@ export class MongoOutboxAdapter implements OutboxPort {
   }
 
   async fetchPending(limit: number): Promise<OutboxEvent[]> {
-    const session = await this.connection.startSession();
-    try {
-      let events: Array<{
-        _id: string;
-        event_type: string;
-        aggregate_type: string;
-        aggregate_id: string;
-        payload: unknown;
-        metadata?: unknown;
-        correlation_id?: string | null;
-        status: 'PENDING' | 'PROCESSING' | 'PROCESSED' | 'FAILED' | 'DEAD_LETTERED';
-        created_at: Date;
-      }> = [];
+    const claimedEvents: OutboxEventDocument[] = [];
+    const now = new Date();
 
-      await session.withTransaction(async () => {
-        events = await this.mongoDb.events.outboxEvent
-          .find({
+    for (let index = 0; index < limit; index += 1) {
+      // Claim one event at a time with an atomic state transition so multiple workers
+      // can safely poll even when Mongo transactions are unavailable.
+      const claimed = (await this.mongoDb.events.outboxEvent
+        .findOneAndUpdate(
+          {
             status: 'PENDING',
-            $and: [{ attempts: { $lt: 5 } }],
-            $or: [{ next_retry_at: { $lte: new Date() } }, { next_retry_at: null }],
-          })
-          .sort({ created_at: 1 })
-          .limit(limit)
-          .session(session)
-          .lean();
-
-        if (events.length === 0) {
-          return;
-        }
-
-        await this.mongoDb.events.outboxEvent.updateMany(
-          { _id: { $in: events.map((event) => event._id) } },
+            attempts: { $lt: 5 },
+            $or: [{ next_retry_at: { $lte: now } }, { next_retry_at: null }],
+          },
           {
             $set: {
               status: 'PROCESSING',
@@ -83,24 +62,32 @@ export class MongoOutboxAdapter implements OutboxPort {
             },
             $inc: { attempts: 1 },
           },
-          { session },
-        );
-      });
+          {
+            sort: { created_at: 1 },
+            new: true,
+            lean: true,
+          },
+        )
+        .exec()) as OutboxEventDocument | null;
 
-      return events.map((event) => ({
-        id: event._id,
-        eventType: event.event_type,
-        aggregateType: event.aggregate_type,
-        aggregateId: event.aggregate_id,
-        payload: event.payload,
-        metadata: event.metadata,
-        correlationId: event.correlation_id ?? null,
-        status: event.status,
-        createdAt: event.created_at,
-      }));
-    } finally {
-      await session.endSession();
+      if (!claimed) {
+        break;
+      }
+
+      claimedEvents.push(claimed);
     }
+
+    return claimedEvents.map((event) => ({
+      id: event._id,
+      eventType: event.event_type,
+      aggregateType: event.aggregate_type,
+      aggregateId: event.aggregate_id,
+      payload: event.payload,
+      metadata: event.metadata,
+      correlationId: event.correlation_id ?? null,
+      status: event.status,
+      createdAt: event.created_at,
+    }));
   }
 
   async markProcessed(id: string): Promise<void> {

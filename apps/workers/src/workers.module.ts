@@ -22,7 +22,6 @@ import { ALL_WORKER_QUEUE_CONFIGS } from './configs/queues.config';
     QueueModule.registerQueues(ALL_WORKER_QUEUE_CONFIGS),
     PersistenceModule.forRoot({
       events: true,
-      transactions: true,
     }),
     EventsWorkersModule,
   ],

@@ -24,7 +24,7 @@ export async function bootstrap() {
   const drivers = resolveStoreDrivers();
 
   logger.log(
-    `Workers runtime started [pid=${process.pid}, env=${config.get<string>('NODE_ENV') ?? 'development'}, tx=${drivers.transactionDriver}, events=${drivers.eventsStoreDriver}]`,
+    `Workers runtime started [pid=${process.pid}, env=${config.get<string>('NODE_ENV') ?? 'development'}, events=${drivers.eventsStoreDriver}]`,
     'WorkersBootstrap',
   );
 }
