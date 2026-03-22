@@ -1,12 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { MONGO_RUNTIME_CONFIG_TOKEN, type MongoRuntimeConfig } from '@repo/config';
 import { MongooseModule, MongooseModuleOptions } from '@nestjs/mongoose';
-import { MONGO_TRANSACTION_PORT_TOKEN } from '@repo/ports';
-import { MongoTransactionAdapter } from './mongo-transaction.adapter';
-import { mongoDbClientProvider } from './mongo-db-client.provider';
-import { MongoService } from './mongo.service';
-import { EventsModelsModule, UsersModelsModule } from './modules';
-import { MONGO_CONNECTION_NAME, MONGO_DB_CLIENT_TOKEN } from './tokens/mongo.tokens';
+import { MONGO_CONNECTION_NAME } from './tokens/mongo.tokens';
 
 @Global()
 @Module({
@@ -35,18 +30,7 @@ import { MONGO_CONNECTION_NAME, MONGO_DB_CLIENT_TOKEN } from './tokens/mongo.tok
         return options;
       },
     }),
-    UsersModelsModule,
-    EventsModelsModule,
   ],
-  providers: [
-    mongoDbClientProvider,
-    MongoService,
-    MongoTransactionAdapter,
-    {
-      provide: MONGO_TRANSACTION_PORT_TOKEN,
-      useExisting: MongoTransactionAdapter,
-    },
-  ],
-  exports: [MONGO_DB_CLIENT_TOKEN, MongoService, MONGO_TRANSACTION_PORT_TOKEN],
+  exports: [MongooseModule],
 })
 export class MongoModule {}

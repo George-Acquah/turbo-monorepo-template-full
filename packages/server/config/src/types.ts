@@ -8,12 +8,14 @@ export const LOG_LEVELS = [
   'silly',
 ] as const;
 
-export const STORE_DRIVERS = ['prisma', 'mongo'] as const;
+export const STORE_DRIVERS = ['prisma'] as const;
 export const NODE_ENVS = ['development', 'test', 'production'] as const;
+export const STORAGE_PROVIDERS = ['local', 's3', 'r2', 'supabase'] as const;
 
 export type LogLevel = (typeof LOG_LEVELS)[number];
 export type StoreDriver = (typeof STORE_DRIVERS)[number];
 export type NodeEnv = (typeof NODE_ENVS)[number];
+export type StorageProvider = (typeof STORAGE_PROVIDERS)[number];
 export type ServerRuntime = 'api' | 'workers';
 
 export interface AppRuntimeConfig {
@@ -35,6 +37,23 @@ export interface PersistenceRuntimeConfig {
   authRepoDriver: StoreDriver;
   transactionDriver: StoreDriver;
   eventsStoreDriver: StoreDriver;
+}
+
+export interface StorageRuntimeConfig {
+  provider: StorageProvider;
+  defaultBucket: string;
+  publicBaseUrl?: string;
+  local: {
+    rootPath: string;
+  };
+  s3: {
+    endpoint?: string;
+    region?: string;
+    accessKeyId?: string;
+    secretAccessKey?: string;
+    bucket?: string;
+    forcePathStyle: boolean;
+  };
 }
 
 export interface MongoRuntimeConfig {
@@ -127,4 +146,5 @@ export interface ValidatedServerEnv {
   auth: AuthRuntimeConfig;
   oauth: OAuthRuntimeConfig;
   observability: ObservabilityRuntimeConfig;
+  storage: StorageRuntimeConfig;
 }

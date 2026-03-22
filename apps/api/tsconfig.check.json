@@ -6,7 +6,9 @@
     "paths": {
       "@repo/config": ["../../packages/server/config/src/index.ts"],
       "@repo/events": ["../../packages/server/events/src/index.ts"],
-      "@repo/persistence": ["../../packages/server/persistence/src/index.ts"]
+      "@repo/persistence": ["../../packages/server/persistence/src/index.ts"],
+      "@repo/ports": ["../../packages/server/ports/src/index.ts"],
+      "@repo/storage": ["../../packages/server/storage/src/index.ts"]
     }
   }
 }

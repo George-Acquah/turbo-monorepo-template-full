@@ -36,7 +36,7 @@ describe('workers bootstrap', () => {
       if (token === LOGGER_TOKEN) return logger;
       if (token === APP_RUNTIME_CONFIG_TOKEN) return { nodeEnv: 'test' };
       if (token === PERSISTENCE_RUNTIME_CONFIG_TOKEN) {
-        return { eventsStoreDriver: 'mongo' };
+        return { eventsStoreDriver: 'prisma' };
       }
       return undefined;
     }),

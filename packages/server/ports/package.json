@@ -16,6 +16,7 @@
     "@types/node": "^24.10.0",
     "tsdown": "^0.20.3"
   },
+  "types": "./src/index.ts",
   "exports": {
     ".": "./dist/index.mjs",
     "./audit": "./dist/audit.mjs",
@@ -25,6 +26,7 @@
     "./http": "./dist/http.mjs",
     "./payments": "./dist/payments.mjs",
     "./shared": "./dist/shared.mjs",
+    "./storage": "./dist/storage.mjs",
     "./package.json": "./package.json"
   }
 }

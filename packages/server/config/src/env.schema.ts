@@ -15,16 +15,14 @@ import {
   toLogLevelWithDefault,
   toNodeEnvWithDefault,
   toNumberWithDefault,
-  toOptionalStoreDriver,
   toOptionalString,
-  toStoreDriverWithDefault,
+  toStorageProviderWithDefault,
   toStringArrayWithDefault,
   toStringWithDefault,
 } from './env.transforms';
 import {
   LOG_LEVELS,
   NODE_ENVS,
-  STORE_DRIVERS,
   type AuthRuntimeConfig,
   type GithubOAuthRuntimeConfig,
   type GoogleOAuthRuntimeConfig,
@@ -35,6 +33,8 @@ import {
   type PrismaRuntimeConfig,
   type RedisRuntimeConfig,
   type ServerRuntime,
+  STORAGE_PROVIDERS,
+  type StorageRuntimeConfig,
   type ValidatedServerEnv,
 } from './types';
 
@@ -134,19 +134,6 @@ class SharedEnvSchema {
   @Transform(toBooleanWithDefault(false))
   @IsBoolean()
   REDIS_TLS = false;
-
-  @Transform(toStoreDriverWithDefault('prisma'))
-  @IsIn(STORE_DRIVERS)
-  AUTH_REPO_DRIVER: (typeof STORE_DRIVERS)[number] = 'prisma';
-
-  @Transform(toStoreDriverWithDefault('prisma'))
-  @IsIn(STORE_DRIVERS)
-  TRANSACTION_DRIVER: (typeof STORE_DRIVERS)[number] = 'prisma';
-
-  @Transform(toOptionalStoreDriver)
-  @IsOptional()
-  @IsIn(STORE_DRIVERS)
-  EVENTS_STORE_DRIVER?: (typeof STORE_DRIVERS)[number];
 
   @Transform(toStringWithDefault(''))
   @IsString()
@@ -258,6 +245,51 @@ class SharedEnvSchema {
   @IsOptional()
   @IsString()
   GRAFANA_INSTANCE?: string;
+
+  @Transform(toStorageProviderWithDefault('local'))
+  @IsIn(STORAGE_PROVIDERS)
+  STORAGE_PROVIDER: (typeof STORAGE_PROVIDERS)[number] = 'local';
+
+  @Transform(toStringWithDefault('uploads'))
+  @IsString()
+  STORAGE_DEFAULT_BUCKET = 'uploads';
+
+  @Transform(toOptionalString)
+  @IsOptional()
+  @IsString()
+  STORAGE_PUBLIC_BASE_URL?: string;
+
+  @Transform(toStringWithDefault('.data/storage'))
+  @IsString()
+  STORAGE_LOCAL_ROOT = '.data/storage';
+
+  @Transform(toOptionalString)
+  @IsOptional()
+  @IsString()
+  STORAGE_S3_ENDPOINT?: string;
+
+  @Transform(toStringWithDefault('auto'))
+  @IsString()
+  STORAGE_S3_REGION = 'auto';
+
+  @Transform(toOptionalString)
+  @IsOptional()
+  @IsString()
+  STORAGE_S3_ACCESS_KEY_ID?: string;
+
+  @Transform(toOptionalString)
+  @IsOptional()
+  @IsString()
+  STORAGE_S3_SECRET_ACCESS_KEY?: string;
+
+  @Transform(toOptionalString)
+  @IsOptional()
+  @IsString()
+  STORAGE_S3_BUCKET?: string;
+
+  @Transform(toBooleanWithDefault(false))
+  @IsBoolean()
+  STORAGE_S3_FORCE_PATH_STYLE = false;
 }
 
 class ApiEnvSchema extends SharedEnvSchema {}
@@ -355,6 +387,25 @@ function createObservabilityConfig(schema: SharedEnvSchema): ObservabilityRuntim
   };
 }
 
+function createStorageConfig(schema: SharedEnvSchema): StorageRuntimeConfig {
+  return {
+    provider: schema.STORAGE_PROVIDER,
+    defaultBucket: schema.STORAGE_DEFAULT_BUCKET,
+    publicBaseUrl: schema.STORAGE_PUBLIC_BASE_URL,
+    local: {
+      rootPath: schema.STORAGE_LOCAL_ROOT,
+    },
+    s3: {
+      endpoint: schema.STORAGE_S3_ENDPOINT,
+      region: schema.STORAGE_S3_REGION,
+      accessKeyId: schema.STORAGE_S3_ACCESS_KEY_ID,
+      secretAccessKey: schema.STORAGE_S3_SECRET_ACCESS_KEY,
+      bucket: schema.STORAGE_S3_BUCKET,
+      forcePathStyle: schema.STORAGE_S3_FORCE_PATH_STYLE,
+    },
+  };
+}
+
 function formatValidationErrors(schema: SharedEnvSchema): string[] {
   return validateSync(schema, {
     skipMissingProperties: false,
@@ -377,22 +428,14 @@ export function validateServerEnv(
 
   const errors = formatValidationErrors(schema);
   const persistence: PersistenceRuntimeConfig = {
-    authRepoDriver: schema.AUTH_REPO_DRIVER,
-    transactionDriver: schema.TRANSACTION_DRIVER,
-    eventsStoreDriver: schema.EVENTS_STORE_DRIVER ?? schema.TRANSACTION_DRIVER,
+    authRepoDriver: 'prisma',
+    transactionDriver: 'prisma',
+    eventsStoreDriver: 'prisma',
   };
 
   const mongo = createMongoConfig(schema);
   const prisma = createPrismaConfig(schema);
-
-  const needsMongo =
-    persistence.authRepoDriver === 'mongo' ||
-    persistence.transactionDriver === 'mongo' ||
-    persistence.eventsStoreDriver === 'mongo';
-  const needsPrisma =
-    persistence.authRepoDriver === 'prisma' ||
-    persistence.transactionDriver === 'prisma' ||
-    persistence.eventsStoreDriver === 'prisma';
+  const storage = createStorageConfig(schema);
 
   if (runtime === 'api') {
     if (!schema.JWT_ACCESS_TOKEN_SECRET) {
@@ -403,20 +446,43 @@ export function validateServerEnv(
     }
   }
 
-  if (needsMongo && !mongo.uri) {
+  if (!prisma.databaseUrl) {
     flattenValidationErrors(
-      'MONGODB_URI',
-      'MONGODB_URI or MONGO_URI is required when a mongo store driver is enabled',
+      'DATABASE_URL',
+      'DATABASE_URL is required for canonical PostgreSQL-backed persistence',
       errors,
     );
   }
 
-  if (needsPrisma && !prisma.databaseUrl) {
-    flattenValidationErrors(
-      'DATABASE_URL',
-      'DATABASE_URL is required when a prisma store driver is enabled',
-      errors,
-    );
+  if (storage.provider !== 'local') {
+    if (!storage.s3.bucket) {
+      flattenValidationErrors(
+        'STORAGE_S3_BUCKET',
+        `STORAGE_S3_BUCKET is required when STORAGE_PROVIDER=${storage.provider}`,
+        errors,
+      );
+    }
+    if (!storage.s3.endpoint && storage.provider !== 'supabase') {
+      flattenValidationErrors(
+        'STORAGE_S3_ENDPOINT',
+        `STORAGE_S3_ENDPOINT is required when STORAGE_PROVIDER=${storage.provider}`,
+        errors,
+      );
+    }
+    if (!storage.s3.accessKeyId) {
+      flattenValidationErrors(
+        'STORAGE_S3_ACCESS_KEY_ID',
+        `STORAGE_S3_ACCESS_KEY_ID is required when STORAGE_PROVIDER=${storage.provider}`,
+        errors,
+      );
+    }
+    if (!storage.s3.secretAccessKey) {
+      flattenValidationErrors(
+        'STORAGE_S3_SECRET_ACCESS_KEY',
+        `STORAGE_S3_SECRET_ACCESS_KEY is required when STORAGE_PROVIDER=${storage.provider}`,
+        errors,
+      );
+    }
   }
 
   if (errors.length > 0) {
@@ -446,5 +512,6 @@ export function validateServerEnv(
       github: createGithubOAuthConfig(schema),
     },
     observability: createObservabilityConfig(schema),
+    storage,
   };
 }

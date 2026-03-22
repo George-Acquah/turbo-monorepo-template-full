@@ -11,6 +11,7 @@ import type {
   PersistenceRuntimeConfig,
   PrismaRuntimeConfig,
   RedisRuntimeConfig,
+  StorageRuntimeConfig,
   ValidatedServerEnv,
 } from './types';
 
@@ -26,6 +27,7 @@ export const AUTH_RUNTIME_CONFIG_TOKEN = Symbol('AUTH_RUNTIME_CONFIG_TOKEN');
 export const GOOGLE_OAUTH_RUNTIME_CONFIG_TOKEN = Symbol('GOOGLE_OAUTH_RUNTIME_CONFIG_TOKEN');
 export const GITHUB_OAUTH_RUNTIME_CONFIG_TOKEN = Symbol('GITHUB_OAUTH_RUNTIME_CONFIG_TOKEN');
 export const OBSERVABILITY_RUNTIME_CONFIG_TOKEN = Symbol('OBSERVABILITY_RUNTIME_CONFIG_TOKEN');
+export const STORAGE_RUNTIME_CONFIG_TOKEN = Symbol('STORAGE_RUNTIME_CONFIG_TOKEN');
 
 function createConfigSliceProvider<T>(
   provide: symbol,
@@ -65,6 +67,7 @@ export const serverConfigProviders: Provider[] = [
     OBSERVABILITY_RUNTIME_CONFIG_TOKEN,
     (env) => env.observability,
   ),
+  createConfigSliceProvider<StorageRuntimeConfig>(STORAGE_RUNTIME_CONFIG_TOKEN, (env) => env.storage),
 ];
 
 export const serverConfigExports = [
@@ -80,4 +83,5 @@ export const serverConfigExports = [
   GOOGLE_OAUTH_RUNTIME_CONFIG_TOKEN,
   GITHUB_OAUTH_RUNTIME_CONFIG_TOKEN,
   OBSERVABILITY_RUNTIME_CONFIG_TOKEN,
+  STORAGE_RUNTIME_CONFIG_TOKEN,
 ] as const;

@@ -10,6 +10,7 @@ import { ObservabilityModule } from '@repo/observability';
 import { PersistenceModule } from '@repo/persistence';
 import { QueueModule } from '@repo/queue';
 import { RedisModule } from '@repo/redis';
+import { StorageModule } from '@repo/storage';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ALL_PRODUCER_QUEUE_CONFIGS } from './configs/queues.config';
@@ -29,6 +30,7 @@ import { ALL_PRODUCER_QUEUE_CONFIGS } from './configs/queues.config';
       events: true,
       transactions: true,
     }),
+    StorageModule,
     AuthCoreModule,
     EventsModule,
   ],

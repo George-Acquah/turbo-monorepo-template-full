@@ -9,6 +9,7 @@ export default defineConfig({
     events: 'src/events/index.ts',
     http: 'src/http/index.ts',
     payments: 'src/payments/index.ts',
+    storage: 'src/storage/index.ts',
     shared: 'src/shared/index.ts',
   },
   format: ['esm'],

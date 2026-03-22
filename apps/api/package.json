@@ -33,6 +33,7 @@
     "@repo/ports": "workspace:*",
     "@repo/queue": "workspace:*",
     "@repo/redis": "workspace:*",
+    "@repo/storage": "workspace:*",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "express": "^5.2.1",
@@ -83,6 +84,7 @@
       "^@repo/ports$": "<rootDir>/../../../packages/server/ports/src/index.ts",
       "^@repo/queue$": "<rootDir>/../../../packages/server/queue/src/index.ts",
       "^@repo/redis$": "<rootDir>/../../../packages/server/redis/src/index.ts",
+      "^@repo/storage$": "<rootDir>/../../../packages/server/storage/src/index.ts",
       "^@repo/types$": "<rootDir>/../../../packages/server/types/src/index.ts",
       "^@repo/types/express$": "<rootDir>/../../../packages/server/types/src/express.ts",
       "^@repo/utils$": "<rootDir>/../test-support/repo-utils.ts"

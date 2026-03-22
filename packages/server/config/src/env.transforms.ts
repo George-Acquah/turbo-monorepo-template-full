@@ -1,5 +1,14 @@
 import type { TransformFnParams } from 'class-transformer';
-import { LOG_LEVELS, NODE_ENVS, STORE_DRIVERS, type LogLevel, type NodeEnv, type StoreDriver } from './types';
+import {
+  LOG_LEVELS,
+  NODE_ENVS,
+  STORAGE_PROVIDERS,
+  STORE_DRIVERS,
+  type LogLevel,
+  type NodeEnv,
+  type StorageProvider,
+  type StoreDriver,
+} from './types';
 
 function normalizeString(value: unknown): string | undefined {
   if (typeof value !== 'string') {
@@ -78,6 +87,13 @@ export function toStoreDriverWithDefault(defaultValue: StoreDriver) {
 export function toOptionalStoreDriver({ value }: TransformFnParams): StoreDriver | undefined {
   const normalized = normalizeString(value)?.toLowerCase() as StoreDriver | undefined;
   return normalized && STORE_DRIVERS.includes(normalized) ? normalized : undefined;
+}
+
+export function toStorageProviderWithDefault(defaultValue: StorageProvider) {
+  return ({ value }: TransformFnParams): StorageProvider => {
+    const normalized = normalizeString(value)?.toLowerCase() as StorageProvider | undefined;
+    return normalized && STORAGE_PROVIDERS.includes(normalized) ? normalized : defaultValue;
+  };
 }
 
 export function toNodeEnvWithDefault(defaultValue: NodeEnv) {

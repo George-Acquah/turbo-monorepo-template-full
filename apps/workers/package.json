@@ -25,6 +25,7 @@
     "@repo/ports": "workspace:*",
     "@repo/queue": "workspace:*",
     "@repo/redis": "workspace:*",
+    "@repo/storage": "workspace:*",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },
@@ -57,7 +58,8 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "moduleNameMapper": {
-      "^@repo/config$": "<rootDir>/../../packages/server/config/src/index.ts"
+      "^@repo/config$": "<rootDir>/../../packages/server/config/src/index.ts",
+      "^@repo/storage$": "<rootDir>/../../packages/server/storage/src/index.ts"
     },
     "testEnvironment": "node"
   }

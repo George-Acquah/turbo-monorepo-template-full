@@ -6,6 +6,7 @@ import { ObservabilityModule } from '@repo/observability';
 import { PersistenceModule } from '@repo/persistence';
 import { QueueModule } from '@repo/queue';
 import { RedisModule } from '@repo/redis';
+import { StorageModule } from '@repo/storage';
 import { ALL_WORKER_QUEUE_CONFIGS } from './configs/queues.config';
 
 @Module({
@@ -22,6 +23,7 @@ import { ALL_WORKER_QUEUE_CONFIGS } from './configs/queues.config';
       events: true,
       transactions: false,
     }),
+    StorageModule,
     EventsWorkersModule,
   ],
 })

@@ -53,8 +53,6 @@ services:
     depends_on:
       prisma:
         condition: service_healthy
-      mongo:
-        condition: service_healthy
       redis:
         condition: service_healthy
     restart: unless-stopped
@@ -72,8 +70,6 @@ services:
       - ./.env.api
     depends_on:
       prisma:
-        condition: service_healthy
-      mongo:
         condition: service_healthy
       redis:
         condition: service_healthy

@@ -65,6 +65,9 @@ importers:
       '@repo/redis':
         specifier: workspace:*
         version: link:../../packages/server/redis
+      '@repo/storage':
+        specifier: workspace:*
+        version: link:../../packages/server/storage
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
@@ -251,6 +254,9 @@ importers:
       '@repo/redis':
         specifier: workspace:*
         version: link:../../packages/server/redis
+      '@repo/storage':
+        specifier: workspace:*
+        version: link:../../packages/server/storage
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -602,21 +608,9 @@ importers:
       '@nestjs/mongoose':
         specifier: ^11.0.4
         version: 11.0.4(@nestjs/common@11.1.14(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.14)(mongoose@8.23.0(snappy@7.3.3))(rxjs@7.8.2)
-      '@paralleldrive/cuid2':
-        specifier: ^3.0.4
-        version: 3.3.0
       '@repo/config':
         specifier: workspace:*
         version: link:../../config
-      '@repo/constants':
-        specifier: workspace:*
-        version: link:../../constants
-      '@repo/ports':
-        specifier: workspace:*
-        version: link:../../ports
-      '@repo/types':
-        specifier: workspace:*
-        version: link:../../types
       mongoose:
         specifier: ^8.20.1
         version: 8.23.0(snappy@7.3.3)
@@ -913,9 +907,6 @@ importers:
       '@repo/config':
         specifier: workspace:*
         version: link:../config
-      '@repo/mongo':
-        specifier: workspace:*
-        version: link:../databases/mongo
       '@repo/ports':
         specifier: workspace:*
         version: link:../ports
@@ -1069,6 +1060,31 @@ importers:
       ioredis:
         specifier: ^5.8.2
         version: 5.9.3
+    devDependencies:
+      '@repo/eslint-config':
+        specifier: workspace:*
+        version: link:../../configs/eslint-config
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../../configs/typescript-config
+      '@types/node':
+        specifier: ^24.10.0
+        version: 24.10.13
+      tsdown:
+        specifier: ^0.20.3
+        version: 0.20.3(synckit@0.11.12)(typescript@5.9.3)
+
+  packages/server/storage:
+    dependencies:
+      '@nestjs/common':
+        specifier: ^11.0.1
+        version: 11.1.14(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@repo/config':
+        specifier: workspace:*
+        version: link:../config
+      '@repo/ports':
+        specifier: workspace:*
+        version: link:../ports
     devDependencies:
       '@repo/eslint-config':
         specifier: workspace:*
