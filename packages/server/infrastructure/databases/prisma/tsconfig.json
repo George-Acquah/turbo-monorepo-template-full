@@ -1,0 +1,18 @@
+{
+  "extends": "@workspace/typescript/nestjs.json",
+  "compilerOptions": {
+    "declaration": true,
+    "outDir": "./dist",
+    // "rootDir": "./src"
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "src/**/*",
+    "generated/**/*",
+    "prisma.config.ts",
+    "scripts/generate-postgres-constants.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
+}

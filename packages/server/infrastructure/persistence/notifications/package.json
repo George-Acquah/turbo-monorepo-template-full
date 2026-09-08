@@ -1,0 +1,37 @@
+{
+  "name": "@workspace/notifications-persistence",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@workspace/types": "workspace:*",
+    "@workspace/utils": "workspace:*",
+    "@workspace/ports": "workspace:*",
+    "@workspace/constants": "workspace:*",
+    "@workspace/prisma": "workspace:*",
+    "@workspace/mongo": "workspace:*",
+    "@workspace/databases-core": "workspace:*",
+    "mongoose": "^8.9.5"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^11.1.0",
+    "@nestjs/mongoose": "^11.0.3"
+  },
+  "devDependencies": {
+    "@workspace/eslint": "workspace:*",
+    "@workspace/typescript": "workspace:*",
+    "@types/node": "^24.10.0",
+    "tsdown": "^0.20.3",
+    "eslint": "^9.39.1"
+  },
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  }
+}

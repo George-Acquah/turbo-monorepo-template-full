@@ -1,0 +1,48 @@
+{
+  "name": "@workspace/dashboard",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "animejs": "^4.5.0",
+    "@workspace/client-api": "workspace:*",
+    "@workspace/client-hooks": "workspace:*",
+    "@workspace/client-lib": "workspace:*",
+    "@workspace/client-theme": "workspace:*",
+    "@workspace/client-turnstile": "workspace:*",
+    "@workspace/client-types": "workspace:*",
+    "@workspace/client-ui-charts": "workspace:*",
+    "@workspace/client-ui-forms": "workspace:*",
+    "@workspace/client-ui-overlays": "workspace:*",
+    "@workspace/client-ui-pagination": "workspace:*",
+    "@workspace/client-ui-primitives": "workspace:*",
+    "@workspace/client-ui-table": "workspace:*",
+    "@tanstack/react-query": "^5.90.2",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.20.0",
+    "next": "16.2.11",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "server-only": "^0.0.1",
+    "tailwind-merge": "^3.6.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@workspace/eslint": "workspace:*",
+    "@workspace/typescript": "workspace:*",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^24.10.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9.39.1",
+    "tailwindcss": "^4",
+    "typescript": "^5.9.3"
+  }
+}

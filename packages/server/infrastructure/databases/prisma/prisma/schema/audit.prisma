@@ -1,0 +1,189 @@
+// =============================================================================
+// workspace_audit — Append-only audit trail + system/request/job/login logs
+//
+// Five tables, aligned field-for-field with the existing
+// ports/src/database/schema/audit/audit.types.ts (AuditCommandPort /
+// AuditQueryPort — already implemented, this schema was the missing half):
+//   AuditLog       business-mutation trail (role grants, payment capture,
+//                  refund approval, grant revoke, admin actions, erasure)
+//   SystemEvent    operational events (worker/scheduler/api-level incidents)
+//   ApiLog         inbound HTTP request/response audit
+//   JobLog         BullMQ job execution outcomes
+//   LoginAttempt   every login attempt (success + failure) — backs
+//                  workspace_auth.User.failedLoginCount / lockedUntil and the
+//                  enumeration-safe auth responses (doc 06/10)
+//
+// APPEND-ONLY: no updatedAt anywhere in this schema. The initial migration
+// REVOKEs UPDATE/DELETE on all five tables from the application DB roles
+// (workspace_api / workspace_worker) so the trail is tamper-evident.
+// before/after and request/response payload fields are redacted through the
+// same serializer used by structured logs (no PII/secrets).
+//
+// Retention (doc 10 §4-5, enforced by scheduled sweep jobs, not by the schema):
+//   AuditLog (money/access entities)  7 years, partition-by-month at volume
+//   AuditLog (auth noise)             2 years
+//   SystemEvent / ApiLog / JobLog     short (weeks) — operational, not legal
+//   LoginAttempt                      short (weeks-months) — rate-limit/lockout
+//                                     history, not a legal record
+// =============================================================================
+
+model AuditLog {
+  id String @id // aud_*
+
+  /// @check(actor_type IN ('user','system','api','worker'))
+  actorType  String  @map("actor_type")
+  actorId    String? @map("actor_id")
+  actorEmail String? @map("actor_email") // denormalised for readability without an auth join
+
+  action     String // actions.constants.ts AuditActionType, e.g. 'payment.captured'
+  entityType String @map("entity_type") // entities.constants.ts AuditEntityType
+  entityId   String @map("entity_id")
+
+  oldValues Json? @map("old_values") @db.JsonB // redacted diff
+  newValues Json? @map("new_values") @db.JsonB
+
+  description String? // free-text reason, mandatory in the use case for admin manual actions
+
+  ipAddress String? @map("ip_address")
+  userAgent String? @map("user_agent")
+
+  // requestId = the single HTTP request that triggered this row (if any).
+  // correlationId = the cross-system business-transaction id shared with
+  // OutboxEvent/SagaState (doc 10 §1 tracing chain: API -> outbox -> job -> saga
+  // -> audit). A saga can write many AuditLog rows sharing one correlationId.
+  requestId     String? @map("request_id")
+  correlationId String? @map("correlation_id")
+
+  metadata Json? @db.JsonB
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actorType, actorId, createdAt])
+  @@index([correlationId])
+  @@index([requestId])
+  @@index([createdAt]) // retention sweeps / partitioning later
+  @@map("audit_logs")
+  @@schema("workspace_audit")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SystemEvent — operational incidents (worker crash, scheduler miss, external
+// dependency failure) surfaced for the admin/audit console, separate from
+// Prometheus metrics/Loki logs which are not queryable via the app API.
+// ─────────────────────────────────────────────────────────────────────────────
+model SystemEvent {
+  id String @id // sev_*
+
+  /// @check(source IN ('api','workers','scheduler'))
+  source String
+
+  eventType String @map("event_type") // free-form, e.g. 'dlq.threshold_exceeded'
+
+  /// @check(severity IN ('info','warning','error','critical'))
+  severity String @default("info")
+
+  message  String? // maps to SystemEventDto.errorMessage on the read side
+  metadata Json?   @db.JsonB
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([source, severity, createdAt])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("system_events")
+  @@schema("workspace_audit")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ApiLog — inbound HTTP request audit. High volume; short retention by design
+// (operational debugging, not a compliance record).
+// ─────────────────────────────────────────────────────────────────────────────
+model ApiLog {
+  id String @id // api_*
+
+  /// @check(method IN ('GET','POST','PUT','PATCH','DELETE','HEAD','OPTIONS'))
+  method String
+  path   String
+
+  /// @check(status_code >= 100 AND status_code < 600)
+  statusCode Int @map("status_code")
+
+  userId    String? @map("user_id")
+  ipAddress String? @map("ip_address")
+  userAgent String? @map("user_agent")
+  requestId String? @map("request_id")
+
+  durationMs   Int?    @map("duration_ms")
+  errorMessage String? @map("error_message")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([statusCode, createdAt]) // error-rate queries
+  @@index([path])
+  @@index([requestId])
+  @@index([userId])
+  @@map("api_logs")
+  @@schema("workspace_audit")
+  @@index([path, createdAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// JobLog — BullMQ job execution outcomes. Complements tp_queue_depth /
+// tp_saga_failures_total metrics with a queryable per-run record.
+// ─────────────────────────────────────────────────────────────────────────────
+model JobLog {
+  id String @id // jlg_*
+
+  queueName String  @map("queue_name")
+  jobName   String  @map("job_name")
+  jobId     String? @map("job_id") // BullMQ job id
+
+  /// @check(status IN ('QUEUED','ACTIVE','COMPLETED','FAILED','RETRYING'))
+  status String @default("QUEUED")
+
+  startedAt   DateTime? @map("started_at") @db.Timestamptz(6)
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  durationMs  Int?      @map("duration_ms")
+  attempt     Int?
+
+  errorMessage String? @map("error_message")
+  metadata     Json?   @db.JsonB
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([queueName, jobName, createdAt])
+  @@index([jobId])
+  @@index([status, createdAt])
+  @@map("job_logs")
+  @@schema("workspace_audit")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LoginAttempt — every login attempt, success or failure. identifier is the
+// raw email/phone submitted (not necessarily a real account — enumeration-safe
+// responses require logging attempts against unknown identifiers too). Backs
+// workspace_auth.User.failedLoginCount / lockedUntil and the per-identifier
+// rate-limit/lockout check.
+// ─────────────────────────────────────────────────────────────────────────────
+model LoginAttempt {
+  id String @id // lat_*
+
+  identifier String // email or phone as submitted
+  userId     String? @map("user_id") // resolved user, if the identifier matched one
+
+  isSuccessful  Boolean @map("is_successful")
+  failureReason String? @map("failure_reason") // e.g. 'INVALID_PASSWORD','ACCOUNT_LOCKED','MFA_FAILED'
+
+  ipAddress String? @map("ip_address")
+  userAgent String? @map("user_agent")
+
+  attemptedAt DateTime @map("attempted_at") @db.Timestamptz(6)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([identifier, attemptedAt]) // lockout / rate-limit hot path
+  @@index([userId, attemptedAt])
+  @@index([ipAddress, attemptedAt])
+  @@map("login_attempts")
+  @@schema("workspace_audit")
+}

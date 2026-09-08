@@ -1,0 +1,48 @@
+{
+  "name": "@workspace/prisma",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "prisma:generate": "pnpm prisma generate --config ./prisma.config.ts",
+    "prisma:reset": "pnpm prisma migrate reset",
+    "prisma:studio": "pnpm prisma studio",
+    "prisma:migrate:dev": "pnpm prisma migrate dev --config ./prisma.config.ts",
+    "prisma:migrate:check-constraints": "node ./scripts/build-check-constraints.mjs && pnpm prisma migrate dev --config ./prisma.config.ts",
+    "migrate:deploy": "prisma migrate deploy --config=./prisma.config.ts",
+    "generate:postgres-constants": "tsx ./scripts/generate-postgres-constants.ts",
+    "build:check-constraints": "node ./scripts/build-check-constraints.mjs",
+    "build": "pnpm run generate:postgres-constants && tsdown",
+    "dev": "tsdown --watch",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@workspace/types": "workspace:*",
+    "@workspace/utils": "workspace:*",
+    "@workspace/ports": "workspace:*",
+    "@workspace/constants": "workspace:*",
+    "@workspace/databases-core": "workspace:*",
+    "@workspace/context": "workspace:*",
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.10.0",
+    "@prisma/client-runtime-utils": "^7.10.0",
+    "prisma": "^7.10.0"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^11.1.0"
+  },
+  "devDependencies": {
+    "dotenv": "^16.6.1",
+    "@workspace/eslint": "workspace:*",
+    "@workspace/typescript": "workspace:*",
+    "@types/node": "^24.10.0",
+    "tsdown": "^0.20.3",
+    "eslint": "^9.39.1"
+  },
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./client": "./generated/prisma/index.js",
+    "./package.json": "./package.json"
+  }
+}

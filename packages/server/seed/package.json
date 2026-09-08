@@ -1,0 +1,26 @@
+{
+  "name": "@workspace/seed",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "seed": "tsx src/index.ts",
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@workspace/prisma": "workspace:*",
+    "@prisma/adapter-pg": "^7.8.0",
+    "argon2": "^0.44.0",
+    "@paralleldrive/cuid2": "^3.0.4",
+    "dotenv": "^16.6.1"
+  },
+  "devDependencies": {
+    "@workspace/typescript": "workspace:*",
+    "@workspace/eslint": "workspace:*",
+    "@types/node": "^24.10.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.7.3",
+    "eslint": "^9.39.1"
+  }
+}

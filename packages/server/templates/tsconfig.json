@@ -1,0 +1,13 @@
+{
+  "extends": "@workspace/typescript/nestjs.json",
+  "compilerOptions": {
+    "declaration": true,
+    "outDir": "./dist",
+    "rootDir": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src/**/*", "scripts/generate-constants.ts"],
+  "exclude": ["node_modules", "dist"]
+}

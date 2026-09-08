@@ -1,0 +1,58 @@
+{
+  "name": "@workspace/guards",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "tsdown",
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "dev": "tsdown --watch",
+    "lint": "eslint src --ext .ts",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --passWithNoTests"
+  },
+  "dependencies": {
+    "@nestjs/passport": "^11.0.5",
+    "@workspace/constants": "workspace:*",
+    "@workspace/ports": "workspace:*",
+    "@workspace/types": "workspace:*",
+    "@workspace/utils": "workspace:*"
+  },
+  "devDependencies": {
+    "@workspace/eslint": "workspace:*",
+    "@workspace/typescript": "workspace:*",
+    "@workspace/testing": "workspace:*",
+    "@types/jest": "^30.0.0",
+    "@jest/globals": "^30.0.0",
+    "@types/node": "^24.10.0",
+    "eslint": "^9.39.1",
+    "jest": "^30.0.0",
+    "ts-jest": "^29.2.5",
+    "tsdown": "^0.20.3"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^11.1.0"
+  },
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "jest": {
+    "extensionsToTreatAsEsm": [
+      ".ts"
+    ],
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    },
+    "transform": {
+      "^.+\\.ts$": [
+        "ts-jest",
+        {
+          "useESM": true
+        }
+      ]
+    },
+    "rootDir": ".",
+    "testRegex": "test/.*\\.spec\\.ts$",
+    "testEnvironment": "node"
+  }
+}

@@ -1,0 +1,394 @@
+// =============================================================================
+// workspace_auth — Authentication domain
+//
+// Answers: "Who are you? Prove it."
+//
+// Owns: credential storage, session management, MFA, device trust,
+// federated providers, invitation lifecycle, verification tokens.
+//
+// Does NOT own:
+//   Roles / permissions / policies → workspace_identity
+//   Member business profiles       → workspace_profiles
+//   Content access grants          → workspace_memberships
+//
+// Those domain models reference users by userId (plain string FK).
+// No Prisma cross-schema relations are declared on User — this keeps the
+// auth schema clean and prevents domain coupling from leaking in.
+// =============================================================================
+
+// =============================================================================
+// User
+// =============================================================================
+// The global authentication principal. Not tenant-scoped.
+//
+// userType is NOT an authorization field. It classifies what kind of
+// human or entity this account represents. What a STAFF member can
+// actually do is determined entirely by workspace_identity.UserRole.
+//
+// Change from original schema:
+//   role  ('SUPER_ADMIN','TEACHER',...) → removed (was conflating auth with authz)
+//   userType ('STAFF','MEMBER',...)     → what kind of entity, not what they can do
+//   staff / guardians / memberships     → removed (domain models own that reference)
+//   twoFactorSecretEncrypted            → removed (lives on TwoFactorEnrollment)
+// =============================================================================
+model User {
+  id    String  @id
+  email String? @unique
+  phone String? @unique
+
+  /// @check(userType IN ('PLATFORM_ADMIN','STAFF','MEMBER','API_CLIENT'))
+  // PLATFORM_ADMIN  TradingPro platform operators
+  // STAFF           TradingPro staff, mentors, and support users
+  // MEMBER          TradingPro learners and customers
+  // API_CLIENT      Machine / service accounts
+  userType String @default("STAFF") @map("user_type")
+
+  /// @check(status IN ('ACTIVE','INACTIVE','SUSPENDED','PENDING_VERIFICATION','DEACTIVATED'))
+  status String @default("PENDING_VERIFICATION")
+
+  // Profile
+  firstName   String? @map("first_name")
+  lastName    String? @map("last_name")
+  displayName String? @map("display_name")
+  avatarUrl   String? @map("avatar_url")
+
+  // Verification state
+  emailVerified   Boolean   @default(false) @map("email_verified")
+  phoneVerified   Boolean   @default(false) @map("phone_verified")
+  emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamptz(6)
+  phoneVerifiedAt DateTime? @map("phone_verified_at") @db.Timestamptz(6)
+
+  // Credential & security
+  passwordHash     String?   @map("password_hash")
+  twoFactorEnabled Boolean   @default(false) @map("two_factor_enabled")
+  lastLoginAt      DateTime? @map("last_login_at") @db.Timestamptz(6)
+  lastLoginIp      String?   @map("last_login_ip")
+  failedLoginCount Int       @default(0) @map("failed_login_count")
+  lockedUntil      DateTime? @map("locked_until") @db.Timestamptz(6)
+
+  metadata  Json?     @db.JsonB
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  // Auth-domain relations only
+  authProviders           UserAuthProvider[]
+  preferences             UserPreference?
+  sessions                UserSession[]
+  devices                 UserDevice[]
+  sentInvitations         PendingInvitation[]      @relation("invitation_inviter")
+  acceptedInvitations     PendingInvitation[]      @relation("invitation_accepted_user")
+  passwordResetTokens     PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  twoFactorEnrollments    TwoFactorEnrollment[]
+  claimedAccountTokens    AccountClaimToken[]      @relation("account_claim_token_claimed_user")
+  @@index([userType, status])
+  @@index([createdAt])
+  @@map("users")
+  @@schema("workspace_auth")
+}
+
+// =============================================================================
+// UserAuthProvider
+// =============================================================================
+// Federated identity providers: Google, Apple, Microsoft, SAML (enterprise SSO).
+// A user can have multiple providers. EMAIL = password auth track.
+model UserAuthProvider {
+  id     String @id
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// @check(provider IN ('EMAIL','GOOGLE','APPLE','MICROSOFT','PHONE','SAML','OIDC'))
+  provider   String
+  providerId String @map("provider_id") // external account ID from that provider
+
+  email        String?   // email from the provider (may differ from User.email)
+  accessToken  String?   @map("access_token")
+  refreshToken String?   @map("refresh_token")
+  expiresAt    DateTime? @map("expires_at") @db.Timestamptz(6)
+  tokenData    Json?     @map("token_data") @db.JsonB
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([provider, providerId])
+  @@index([userId])
+  @@map("user_auth_providers")
+  @@schema("workspace_auth")
+}
+
+// =============================================================================
+// UserPreference
+// =============================================================================
+// Locale, notification, and UI preferences scoped to the user, not a tenant.
+// Kept in auth because these preferences affect how auth events are communicated
+// (e.g., MFA delivery channel).
+model UserPreference {
+  id     String @id
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  language String  @default("en")
+  timezone String  @default("Africa/Accra")
+  currency String  @default("GHS")
+  darkMode Boolean @default(false) @map("dark_mode")
+
+  /// Supersedes darkMode: a boolean can't express "follow the device", which is a distinct
+  /// stored choice from an explicit light/dark. darkMode is left in place (it is written on
+  /// every user creation) but nothing reads it; drop it in a later migration once confirmed.
+  /// @check(theme IN ('LIGHT','DARK','SYSTEM'))
+  theme String @default("SYSTEM")
+
+  emailNotifications Boolean @default(true)  @map("email_notifications")
+  smsNotifications   Boolean @default(true)  @map("sms_notifications")
+  pushNotifications  Boolean @default(true)  @map("push_notifications")
+  marketingEmails    Boolean @default(false) @map("marketing_emails")
+
+  // Extensible preference blob for app-level preferences
+  preferences Json? @db.JsonB
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("user_preferences")
+  @@schema("workspace_auth")
+}
+
+// =============================================================================
+// UserSession
+// =============================================================================
+// Active sessions with refresh-token tracking.
+// One active session per device per user (@@unique on [userId, deviceId]).
+// organizationId is stored as the active tenant context at login time — informational only.
+// Authorization decisions use workspace_identity, not this field.
+model UserSession {
+  id     String @id
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  refreshTokenHash String @unique @map("refresh_token_hash")
+  jti              String @map("jti") // JWT ID — used for token revocation checks
+
+  // Device context captured at login
+  deviceId   String  @map("device_id")
+  deviceName String? @map("device_name")
+  platform   String?
+  browser    String?
+  ipAddress  String? @map("ip_address")
+  userAgent  String? @map("user_agent")
+
+  // Active tenant at time of session creation
+  organizationId String? @map("organization_id")
+
+  expiresAt    DateTime  @map("expires_at") @db.Timestamptz(6)
+  lastActiveAt DateTime? @map("last_active_at") @db.Timestamptz(6)
+  revokedAt    DateTime? @map("revoked_at") @db.Timestamptz(6)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([userId, deviceId])
+  @@index([jti])
+  @@index([organizationId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+  @@map("user_sessions")
+  @@schema("workspace_auth")
+}
+
+// =============================================================================
+// UserDevice
+// =============================================================================
+// Device fingerprint registry for trust-based MFA bypass.
+// MOVED HERE from the identity schema — device trust is authentication, not authorization.
+// A trusted device can skip MFA on login. That is an auth concern.
+// organizationId-scoped trust means a device trusted in Org A is not trusted in Org B.
+model UserDevice {
+  id     String @id
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  fingerprintHash String  @map("fingerprint_hash")
+
+  deviceName String? @map("device_name")
+  platform   String? // ios | android | windows | macos | linux | web
+  browser    String?
+  ipAddress  String? @map("ip_address")
+  userAgent  String? @map("user_agent")
+
+  trusted   Boolean   @default(false)
+  trustedAt DateTime? @map("trusted_at") @db.Timestamptz(6)
+  trustedBy String?   @map("trusted_by") // userId of admin who marked it trusted (if not self-service)
+
+  lastSeenAt DateTime? @map("last_seen_at") @db.Timestamptz(6)
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz(6)
+
+  metadata  Json?    @db.JsonB
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([userId, fingerprintHash])
+  @@index([trusted])
+  @@index([lastSeenAt])
+  @@map("user_devices")
+  @@schema("workspace_auth")
+}
+
+// =============================================================================
+// PasswordResetToken
+// =============================================================================
+model PasswordResetToken {
+  id     String @id
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
+
+  ipAddress String?  @map("ip_address") // requestor's IP for audit
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+  @@schema("workspace_auth")
+}
+
+// =============================================================================
+// EmailVerificationToken
+// =============================================================================
+// email field stores the specific address being verified — may differ from
+// User.email when a user is changing their email address.
+model EmailVerificationToken {
+  id     String @id
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  email     String
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("email_verification_tokens")
+  @@schema("workspace_auth")
+}
+
+// =============================================================================
+// PendingInvitation
+// =============================================================================
+// Invite lifecycle before the target user exists or has accepted.
+//
+// roleKey maps to Role.key in workspace_identity (loose coupling — no DB-level FK).
+// The application resolves the roleKey to a roleId at acceptance time.
+// schoolIds are the initial school assignments applied when the invite is accepted.
+//
+// Change: role → roleKey (renamed to clarify it references Role.key, not userType)
+model PendingInvitation {
+  id        String @id
+  inviterId String @map("inviter_id")
+  inviter   User   @relation("invitation_inviter", fields: [inviterId], references: [id], onDelete: Cascade)
+
+  email          String?
+  phone          String?
+
+  // References Role.key in workspace_identity. Stored as string (no FK) for loose coupling.
+  roleKey String @map("role_key")
+
+
+  /// @check(status IN ('PENDING','ACCEPTED','EXPIRED','CANCELLED'))
+  status            String  @default("PENDING")
+  verificationToken String  @unique @map("verification_token")
+
+  acceptedUserId String? @map("accepted_user_id")
+  acceptedUser   User?   @relation("invitation_accepted_user", fields: [acceptedUserId], references: [id], onDelete: SetNull)
+
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(6)
+  acceptedAt DateTime? @map("accepted_at") @db.Timestamptz(6)
+  metadata   Json?     @db.JsonB
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([inviterId])
+  @@index([status])
+  @@index([email, status])
+  @@index([phone, status])
+  @@index([expiresAt])
+  @@map("pending_invitations")
+  @@schema("workspace_auth")
+  @@index([acceptedUserId])
+}
+
+// =============================================================================
+// AccountClaimToken
+// =============================================================================
+// Guest → account claim (doc 06 §5). A profile in workspace_profiles can
+// exist before any User does (guest checkout). This token proves the
+// recipient controls the profile's email and lets them set a password and
+// become a real User. Deliberately NOT PendingInvitation: that model requires
+// a human inviterId and a workspace_identity roleKey — both wrong for a
+// system-issued, no-role member claim. profileId is a loose string ref (no
+// FK — auth does not couple to workspace_profiles), mirroring roleKey above.
+model AccountClaimToken {
+  id        String @id
+  profileId String @map("profile_id")
+
+  // Snapshot of the profile's email at issue time (display/audit even if the
+  // profile's email changes before the token is used).
+  email String
+
+  tokenHash String @unique @map("token_hash")
+
+  /// @check(status IN ('PENDING','ACCEPTED','EXPIRED','CANCELLED'))
+  status String @default("PENDING")
+
+  claimedUserId String? @map("claimed_user_id")
+  claimedUser   User?   @relation("account_claim_token_claimed_user", fields: [claimedUserId], references: [id], onDelete: SetNull)
+
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  claimedAt DateTime? @map("claimed_at") @db.Timestamptz(6)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([profileId])
+  @@index([expiresAt])
+  @@map("account_claim_tokens")
+  @@schema("workspace_auth")
+  @@index([claimedUserId])
+}
+
+// =============================================================================
+// TwoFactorEnrollment
+// =============================================================================
+// Second-factor methods per user. Multiple methods allowed, one primary.
+// For TOTP: secretEncrypted holds the encrypted shared secret.
+// For SMS/EMAIL: target holds the delivery address.
+// Recovery codes are stored hashed.
+model TwoFactorEnrollment {
+  id     String @id
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// @check(method IN ('TOTP','SMS','EMAIL'))
+  method          String
+  secretEncrypted String? @map("secret_encrypted")
+  target          String? // phone for SMS, email for EMAIL MFA
+
+  isPrimary         Boolean   @default(false) @map("is_primary")
+  verifiedAt        DateTime? @map("verified_at") @db.Timestamptz(6)
+  lastUsedAt        DateTime? @map("last_used_at") @db.Timestamptz(6)
+  recoveryCodesHash String[]  @default([]) @map("recovery_codes_hash")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@unique([userId, method])
+  @@map("two_factor_enrollments")
+  @@schema("workspace_auth")
+}

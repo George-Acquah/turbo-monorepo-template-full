@@ -1,0 +1,63 @@
+{
+  "name": "@workspace/email",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "lint": "eslint src --ext .ts",
+    "check-types": "tsc --noEmit",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --passWithNoTests"
+  },
+  "dependencies": {
+    "@workspace/types": "workspace:*",
+    "@workspace/ports": "workspace:*",
+    "@workspace/constants": "workspace:*",
+    "@workspace/templates": "workspace:*",
+    "resend": "^6.18.1",
+    "mailgun.js": "^13.3.0",
+    "form-data": "^4.0.6",
+    "nodemailer": "^9.0.3"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^11.1.0",
+    "@nestjs/config": "^4.0.2"
+  },
+  "devDependencies": {
+    "@workspace/eslint": "workspace:*",
+    "@workspace/typescript": "workspace:*",
+    "@workspace/testing": "workspace:*",
+    "@types/jest": "^30.0.0",
+    "@jest/globals": "^30.0.0",
+    "@types/node": "^24.10.0",
+    "@types/nodemailer": "^8.0.1",
+    "eslint": "^9.39.1",
+    "jest": "^30.0.0",
+    "ts-jest": "^29.2.5",
+    "tsdown": "^0.20.3"
+  },
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "jest": {
+    "extensionsToTreatAsEsm": [
+      ".ts"
+    ],
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    },
+    "transform": {
+      "^.+\\.ts$": [
+        "ts-jest",
+        {
+          "useESM": true
+        }
+      ]
+    },
+    "rootDir": ".",
+    "testRegex": "test/.*\\.spec\\.ts$",
+    "testEnvironment": "node"
+  }
+}

@@ -1,0 +1,182 @@
+<mjml>
+  <mj-head>
+    <mj-title>Welcome to Workspace</mj-title>
+    <mj-preview>Your Workspace account is ready — let’s get started</mj-preview>
+    <mj-attributes>
+      <mj-all
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif"
+      />
+      <mj-text font-size="15px" line-height="1.7" color="#111827" />
+      <mj-section background-color="#ffffff" />
+    </mj-attributes>
+    <mj-style>
+      a {
+        color: #2563eb;
+      }
+      .brand-tag {
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+    </mj-style>
+  </mj-head>
+  <mj-body background-color="#eef2ff" width="640px">
+    <mj-wrapper border="1px solid #e5e7eb" border-radius="18px" padding="0">
+      <mj-section background-color="#0b1020" padding="22px 28px">
+        <mj-column>
+          <mj-image src="{{logoUrl}}" alt="Workspace logo" align="left" width="120px" padding="0" />
+        </mj-column>
+        <mj-column>
+          <mj-text
+            align="right"
+            color="#c7d2fe"
+            font-size="11px"
+            font-weight="700"
+            css-class="brand-tag"
+            padding="10px 0 0"
+          >
+            Learning & Mentorship
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <mj-section background-color="#1d4ed8" padding="34px 28px 26px">
+        <mj-column>
+          <mj-text
+            font-size="30px"
+            font-weight="800"
+            color="#ffffff"
+            line-height="1.2"
+            align="center"
+            padding-bottom="10px"
+          >
+            Welcome aboard, {{#if name}}{{cleanGreeting name}}{{else}}there{{/if}}! 🎉
+          </mj-text>
+          <mj-text align="center" color="#dbeafe" font-size="16px" line-height="1.6">
+            Your Workspace account is ready and your learning journey is waiting.
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <mj-section padding="30px 28px 8px">
+        <mj-column>
+          <mj-text font-size="18px" font-weight="700" color="#111827" padding-bottom="8px">
+            Your details
+          </mj-text>
+          <mj-text color="#374151">
+            Your account has been created. Use the details below to sign in for the first time.
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <mj-section padding="8px 28px 22px">
+        <mj-column>
+          <mj-table
+            cellpadding="12"
+            cellspacing="0"
+            width="100%"
+            container-background-color="#eff6ff"
+          >
+            <tr>
+              <td
+                style="
+                  font-size: 12px;
+                  text-transform: uppercase;
+                  letter-spacing: 0.08em;
+                  color: #64748b;
+                  font-weight: 700;
+                  width: 38%;
+                  border-bottom: 1px solid #e2e8f0;
+                "
+              >
+                Email
+              </td>
+              <td
+                style="
+                  font-size: 14px;
+                  color: #0f172a;
+                  font-weight: 600;
+                  border-bottom: 1px solid #e2e8f0;
+                "
+              >
+                {{ email }}
+              </td>
+            </tr>
+            {{#if tempPassword}}
+            <tr>
+              <td
+                style="
+                  font-size: 12px;
+                  text-transform: uppercase;
+                  letter-spacing: 0.08em;
+                  color: #64748b;
+                  font-weight: 700;
+                  width: 38%;
+                "
+              >
+                Temp password
+              </td>
+              <td style="font-size: 14px; color: #0f172a; font-weight: 600">
+                <span
+                  style="
+                    display: inline-block;
+                    background: #e0f2fe;
+                    color: #0f172a;
+                    padding: 6px 10px;
+                    border-radius: 8px;
+                    font-family: monospace;
+                  "
+                  >{{ tempPassword }}</span
+                >
+              </td>
+            </tr>
+            {{/if}}
+          </mj-table>
+          {{#if tempPassword}}
+          <mj-text color="#b91c1c" font-size="13px" padding-top="10px">
+            ⚠️ Please change your password immediately after signing in.
+          </mj-text>
+          {{/if}}
+        </mj-column>
+      </mj-section>
+
+      <mj-section padding="0 28px 8px">
+        <mj-column>
+          <mj-text font-size="18px" font-weight="700" color="#111827" padding-bottom="8px">
+            What happens next
+          </mj-text>
+          <mj-text color="#374151" line-height="1.7">
+            • Explore your dashboard and available programmes.<br />
+            • Browse courses and enrol to start learning right away.<br />
+            • Update your notification preferences to personalise your experience.
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <mj-section padding="18px 28px 32px">
+        <mj-column>
+          <mj-button
+            background-color="#2563eb"
+            color="#ffffff"
+            font-size="15px"
+            font-weight="700"
+            border-radius="10px"
+            inner-padding="16px 26px"
+            href="{{loginUrl}}"
+          >
+            Sign in to Workspace
+          </mj-button>
+        </mj-column>
+      </mj-section>
+
+      <mj-section background-color="#f8fafc" padding="20px 28px 24px">
+        <mj-column>
+          <mj-text align="center" font-size="12px" color="#64748b" line-height="1.6">
+            Need help? <a href="mailto:{{supportEmail}}">{{ supportEmail }}</a
+            ><br />
+            © {{ year }} Workspace. All rights reserved.
+          </mj-text>
+        </mj-column>
+      </mj-section>
+    </mj-wrapper>
+  </mj-body>
+</mjml>

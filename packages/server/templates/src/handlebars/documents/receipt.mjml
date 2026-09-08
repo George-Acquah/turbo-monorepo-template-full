@@ -1,0 +1,96 @@
+<mjml>
+  <mj-head>
+    <mj-title>Receipt {{receiptNumber}}</mj-title>
+    <mj-attributes>
+      <mj-all font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" />
+      <mj-text font-size="13px" line-height="1.5" color="#111827" />
+      <mj-section background-color="#ffffff" padding="0" />
+      <mj-column padding="0" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#ffffff" width="700px">
+    <!-- Header -->
+    <mj-section border-bottom="3px solid #16a34a" padding="0 0 20px" padding-top="24px">
+      <mj-column width="60%">
+        <mj-text font-size="24px" font-weight="800" color="#16a34a" padding="6px 0 0">
+          Workspace
+        </mj-text>
+        <mj-text font-size="12px" color="#6b7280" padding="2px 0 0">Payment Receipt</mj-text>
+        <mj-text font-size="11px" color="#6b7280" padding="2px 0 0" line-height="1.6">
+          hello@example.com
+        </mj-text>
+      </mj-column>
+      <mj-column width="40%">
+        <mj-text align="right" padding="0 0 6px">
+          <span style="font-size: 28px; font-weight: 800; color: #16a34a">RECEIPT</span>
+        </mj-text>
+        <mj-text font-size="14px" font-weight="600" color="#374151" align="right" padding="0 0 6px">
+          {{receiptNumber}}
+        </mj-text>
+        <mj-text align="right">
+          <span style="display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; background: #dcfce7; color: #166534">PAID</span>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Info grid -->
+    <mj-section padding="24px 0 0">
+      <mj-column>
+        <mj-text font-size="10px" font-weight="700" text-transform="uppercase" letter-spacing="0.8px" color="#9ca3af" padding-bottom="8px">
+          Paid By
+        </mj-text>
+        <mj-table font-size="13px" cellpadding="5px 0">
+          <tr style="border-bottom: 1px solid #f3f4f6">
+            <td style="color: #6b7280">Name</td>
+            <td style="text-align: right; font-weight: 500">{{customerName}}</td>
+          </tr>
+          <tr>
+            <td style="color: #6b7280">Email</td>
+            <td style="text-align: right; font-weight: 500">{{customerEmail}}</td>
+          </tr>
+        </mj-table>
+      </mj-column>
+      <mj-column>
+        <mj-text font-size="10px" font-weight="700" text-transform="uppercase" letter-spacing="0.8px" color="#9ca3af" padding-bottom="8px">
+          Payment Details
+        </mj-text>
+        <mj-table font-size="13px" cellpadding="5px 0">
+          <tr style="border-bottom: 1px solid #f3f4f6">
+            <td style="color: #6b7280">Payment ID</td>
+            <td style="text-align: right; font-weight: 500">{{paymentId}}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #f3f4f6">
+            <td style="color: #6b7280">Date</td>
+            <td style="text-align: right; font-weight: 500">{{capturedAt}}</td>
+          </tr>
+          <tr>
+            <td style="color: #6b7280">Method</td>
+            <td style="text-align: right; font-weight: 500">{{method}}</td>
+          </tr>
+        </mj-table>
+      </mj-column>
+    </mj-section>
+
+    <!-- Total -->
+    <mj-section padding="32px 0 16px">
+      <mj-column>
+        <mj-text align="center" font-size="16px" color="#6b7280" padding-bottom="8px">Amount Paid</mj-text>
+        <mj-text align="center" font-size="40px" font-weight="800" color="#111827">{{currency}} {{formatAmount amountMinor}}</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Footer -->
+    <mj-section border-top="1px solid #e5e7eb" padding="14px 0 0">
+      <mj-column>
+        <mj-text font-size="11px" color="#9ca3af">
+          Thank you for your payment.
+        </mj-text>
+      </mj-column>
+      <mj-column>
+        <mj-text align="right">
+          <span style="font-size: 13px; font-weight: 700; color: #16a34a">Workspace</span>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

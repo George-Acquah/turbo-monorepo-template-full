@@ -1,0 +1,53 @@
+{
+  "name": "@workspace/testing",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Generic reusable testing infrastructure for workspace packages.",
+  "scripts": {
+    "build": "tsdown",
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "dev": "tsdown --watch",
+    "lint": "eslint src --ext .ts"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/core": "^11.0.1",
+    "@nestjs/testing": "^11.1.26",
+    "eslint": "^9.39.1",
+    "@workspace/eslint": "workspace:*",
+    "@workspace/typescript": "workspace:*",
+    "@types/node": "^24.10.0",
+    "tsdown": "^0.20.3",
+    "typescript": "5.9.3"
+  },
+  "peerDependencies": {
+    "@jest/globals": ">=29",
+    "@nestjs/common": ">=11",
+    "@nestjs/core": ">=11",
+    "@nestjs/testing": ">=11"
+  },
+  "peerDependenciesMeta": {
+    "@nestjs/common": {
+      "optional": true
+    },
+    "@nestjs/core": {
+      "optional": true
+    },
+    "@nestjs/testing": {
+      "optional": true
+    }
+  },
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./database": "./dist/database.mjs",
+    "./helpers": "./dist/helpers.mjs",
+    "./infrastructure": "./dist/infrastructure.mjs",
+    "./jest": "./dist/jest.mjs",
+    "./mocks": "./dist/mocks.mjs",
+    "./nest": "./dist/nest.mjs",
+    "./time": "./dist/time.mjs",
+    "./package.json": "./package.json"
+  }
+}

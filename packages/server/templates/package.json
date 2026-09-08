@@ -1,0 +1,61 @@
+{
+  "name": "@workspace/templates",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "npx tsx scripts/generate-constants.ts && tsdown && cp -r src/handlebars dist/",
+    "dev": "tsdown --watch",
+    "lint": "eslint src --ext .ts",
+    "check-types": "tsc --noEmit",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --passWithNoTests"
+  },
+  "dependencies": {
+    "@workspace/brand-tokens": "workspace:*",
+    "@workspace/cache": "workspace:*",
+    "@workspace/constants": "workspace:*",
+    "@workspace/types": "workspace:*",
+    "@workspace/ports": "workspace:*",
+    "handlebars": "^4.7.9",
+    "mjml": "^5.4.0"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.2"
+  },
+  "devDependencies": {
+    "@workspace/eslint": "workspace:*",
+    "@workspace/typescript": "workspace:*",
+    "@workspace/testing": "workspace:*",
+    "@jest/globals": "^30.0.0",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.10.0",
+    "eslint": "^9.39.1",
+    "jest": "^30.0.0",
+    "ts-jest": "^29.2.5",
+    "tsdown": "^0.20.3"
+  },
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "jest": {
+    "extensionsToTreatAsEsm": [
+      ".ts"
+    ],
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    },
+    "transform": {
+      "^.+\\.ts$": [
+        "ts-jest",
+        {
+          "useESM": true
+        }
+      ]
+    },
+    "rootDir": ".",
+    "testRegex": "test/.*\\.spec\\.ts$",
+    "testEnvironment": "node"
+  }
+}

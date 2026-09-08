@@ -1,0 +1,78 @@
+<mjml>
+  <mj-head>
+    <mj-title>Subscription Cancelled — Workspace</mj-title>
+    <mj-preview>Your subscription has been cancelled</mj-preview>
+    <mj-attributes>
+      <mj-all font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" />
+      <mj-text font-size="15px" line-height="1.7" color="#111827" />
+      <mj-section background-color="#ffffff" />
+    </mj-attributes>
+    <mj-style>
+      a { color: #2563eb; }
+      .brand-tag { letter-spacing: 0.12em; text-transform: uppercase; }
+    </mj-style>
+  </mj-head>
+  <mj-body background-color="#eef2ff" width="640px">
+    <mj-wrapper border="1px solid #e5e7eb" border-radius="18px" overflow="hidden" padding="0">
+      <mj-section background-color="#0b1020" padding="22px 28px">
+        <mj-column>
+          <mj-image src="{{logoUrl}}" alt="Workspace logo" align="left" width="120px" padding="0" />
+        </mj-column>
+        <mj-column>
+          <mj-text align="right" color="#c7d2fe" font-size="11px" font-weight="700" class="brand-tag" padding="10px 0 0">
+            Learning & Mentorship
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+            <!-- Body -->
+    <mj-section padding="24px 24px 8px">
+      <mj-column>
+        <mj-text>Hi {{#if name}}{{cleanGreeting name}}{{else}}there{{/if}},</mj-text>
+        <mj-text>
+          Your subscription for <strong>{{ programmeName }}</strong> has been cancelled. You may still have access until the end of your current billing period.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Details -->
+    <mj-section background-color="#f9fafb" border-radius="8px" padding="20px 24px">
+      <mj-column>
+        <mj-table font-size="14px" color="#111827" cellpadding="9">
+          <tr style="border-bottom: 1px solid #e5e7eb">
+            <td style="color: #6b7280; font-size: 12px; font-weight: 600; text-transform: uppercase">Programme</td>
+            <td style="text-align: right; font-weight: 500">{{ programmeName }}</td>
+          </tr>
+          <tr>
+            <td style="color: #6b7280; font-size: 12px; font-weight: 600; text-transform: uppercase">Cancelled At</td>
+            <td style="text-align: right">{{formatDate cancelledAt}}</td>
+          </tr>
+        </mj-table>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="24px 24px 8px">
+      <mj-column>
+        <mj-text>We're sorry to see you go. If you change your mind, you can re-subscribe anytime from our programmes page.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- CTA -->
+    <mj-section padding="8px 24px 32px">
+      <mj-column>
+        <mj-button background-color="#2563eb" color="#ffffff" font-size="15px" font-weight="600" border-radius="8px" padding="14px 28px" href="{{landingUrl}}/programmes" inner-padding="0">
+          Explore programmes
+        </mj-button>
+      </mj-column>
+    </mj-section>
+      <mj-section background-color="#f8fafc" padding="20px 28px 24px">
+        <mj-column>
+          <mj-text align="center" font-size="12px" color="#64748b" line-height="1.6">
+            Need help? <a href="mailto:{{supportEmail}}">{{ supportEmail }}</a><br />
+            © {{ year }} Workspace. All rights reserved.
+          </mj-text>
+        </mj-column>
+      </mj-section>
+    </mj-wrapper>
+  </mj-body>
+</mjml>

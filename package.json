@@ -1,0 +1,34 @@
+{
+  "name": "monorepo-template",
+  "version": "0.1.0",
+  "description": "Full-stack pnpm + Turborepo monorepo template — NestJS ports/adapters backend with bounded-context modules + outbox/event bus, and a layered client foundation + Next.js dashboard/landing apps.",
+  "scripts": {
+    "build": "turbo run build",
+    "build:landing": "turbo run build --filter=@workspace/landing",
+    "build:dashboard": "turbo run build --filter=@workspace/dashboard",
+    "dev": "turbo run dev",
+    "dev:landing": "turbo run dev --filter=@workspace/landing",
+    "dev:dashboard": "turbo run dev --filter=@workspace/dashboard",
+    "lint:fix": "turbo run lint -- --fix --no-warn-ignored",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "test": "pnpm -r --if-present test",
+    "test:ci": "turbo run test",
+    "test:affected": "turbo run test --filter=...[HEAD^1]",
+    "check-types": "turbo run check-types",
+    "db:seed": "pnpm --filter @workspace/seed run seed"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "prettier": "^3.8.4",
+    "tsx": "^4.22.4",
+    "turbo": "^2.9.18",
+    "typescript": "6.0.3"
+  },
+  "packageManager": "pnpm@11.8.0",
+  "engines": {
+    "node": "22.x"
+  }
+}

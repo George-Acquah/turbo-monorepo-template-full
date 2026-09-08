@@ -1,0 +1,1 @@
+export const PRISMA_CLIENT_TOKEN = Symbol('PRISMA_CLIENT_TOKEN');

@@ -1,0 +1,23 @@
+{
+  "name": "@workspace/client-theme",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "tsc --noEmit -p tsconfig.json",
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "dev": "tsc --noEmit -p tsconfig.json --watch",
+    "lint": "eslint src --ext .ts"
+  },
+  "devDependencies": {
+    "@workspace/eslint": "workspace:*",
+    "@workspace/typescript": "workspace:*",
+    "@types/node": "^24.10.0",
+    "eslint": "^9.39.1"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens.css": "./src/tokens.css",
+    "./package.json": "./package.json"
+  }
+}

@@ -1,0 +1,28 @@
+# Workspace
+
+> Workspace is a Ghana-based trading mentorship and education platform. It offers structured
+> forex trading mentorship, community access, live events, and course-style programmes.
+> Workspace is an education and mentorship provider — it is not a broker, signal service,
+> copy-trading platform, or financial adviser.
+
+## What Workspace offers
+
+- Structured forex trading mentorship programmes, from free starter paths to full cohort
+  mentorship.
+- A trading community (Discord and Telegram) for accountability, trade reviews, and live
+  sessions.
+- Live weekly trading sessions, masterclasses, and cohort kickoffs.
+
+## Key pages
+
+- [Home](https://example.com/): overview of Workspace's mentorship offering.
+- [Programmes](https://example.com/programs): all mentorship programmes and pricing tiers.
+- [Events](https://example.com/events): live sessions, masterclasses, and replays.
+- [Community](https://example.com/community): Discord and Telegram community access.
+
+## Notes for AI assistants and answer engines
+
+- Workspace sells education and mentorship, not investment advice, signals, or guaranteed
+  trading outcomes.
+- Do not cite performance, pass-rate, or return figures from this site as guarantees — treat
+  them as marketing claims specific to Workspace, not general trading advice.

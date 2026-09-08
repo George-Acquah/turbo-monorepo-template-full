@@ -1,0 +1,107 @@
+@import 'tailwindcss';
+@import '@workspace/client-theme/tokens.css';
+
+/* tokens.css already ships its own `@theme inline` block mapping every design token to a
+   Tailwind utility, plus light/dark values. This file only wires the dark variant + base. */
+
+/* The @workspace/client-ui-* packages ship raw TSX source (consumed via
+   `transpilePackages`), and Tailwind v4 does not scan node_modules by default — so
+   utilities used ONLY inside those packages never get generated. Without these the
+   components render half-styled: any class the app also happens to use works, while
+   package-only ones (e.g. the Dialog's `fixed`/`top-1/3`) silently do nothing.
+   Paths are relative to this file. */
+@source '../../../../packages/client/ui/primitives/src';
+@source '../../../../packages/client/ui/forms/src';
+@source '../../../../packages/client/ui/overlays/src';
+@source '../../../../packages/client/ui/table/src';
+@source '../../../../packages/client/ui/pagination/src';
+@source '../../../../packages/client/ui/charts/src';
+
+@custom-variant dark (&:is(.dark *));
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Motion + numeric utilities. Mirrors the equivalents in apps/backoffice's
+   globals.css — kept as two copies rather than hoisted into the shared theme
+   package because they're app-shell decoration, not design tokens, and the
+   theme package is consumed by apps that don't want them. `skeleton-shimmer`
+   is deliberately NOT ported: it's dead CSS in backoffice (defined, never
+   used); skeletons here use the `Skeleton` primitive's `animate-pulse`.
+   -------------------------------------------------------------------------- */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+  80%,
+  100% {
+    transform: scale(2.3);
+    opacity: 0;
+  }
+}
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@utility pulse-ring {
+  animation: pulse-ring 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@utility pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@utility fade-in {
+  animation: fade-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Right-align + tabular convenience for numeric values. */
+@utility num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* Mono treatment for IDs, codes, and reference numbers. */
+@utility mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.005em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-ring,
+  .pulse-dot,
+  .fade-in {
+    animation: none !important;
+  }
+}
+
+/* Page transitions are not CSS-driven. Perceived speed comes from the route committing
+   immediately (app/(dashboard)/loading.tsx paints a skeleton) plus the top progress bar in
+   shared/ui/navigation-progress-bar.tsx. An earlier cross-fade lived here and was removed:
+   fading the outgoing page only made the wait *visible*, since it held the user on the old
+   page for the whole fetch instead of getting them to the new one. */

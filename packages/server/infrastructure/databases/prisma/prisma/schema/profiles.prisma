@@ -1,0 +1,64 @@
+// =============================================================================
+// workspace_profiles — People as the business sees them
+//
+// Answers: "Who is this person to the business?"
+//
+// A person exists BEFORE a login does: guest checkout creates a MemberProfile
+// keyed by email, later linked to a workspace_auth.User (via userId) when the
+// account is claimed. Orders/enrolments/grants hang off profileId, so nothing
+// breaks when the account is claimed later.
+//
+// This is the PII hotspot. DPA (Ghana Data Protection Act 2012) erasure =
+// soft-delete (deletedAt) then a purge job clears name/phone/goal and tombstones
+// the email hash.
+// =============================================================================
+
+model MemberProfile {
+  id     String  @id // prf_*
+  userId String? @unique @map("user_id") // linked at account claim; string ref to auth, no FK
+  email  String  @unique // lowercased; the guest-checkout natural key
+
+  firstName String  @map("first_name")
+  lastName  String  @map("last_name")
+  phone     String?
+  country   String? @default("GH")
+
+  /// @check(experience IN ('none','learning','losing','breakeven','profitable'))
+  experience String? // from the enrol form (schema.ts)
+  goal       String? // <= 500 chars, enforced in DTO
+  source     String? // utm / campaign attribution
+
+  marketingOptIn Boolean @default(false) @map("marketing_opt_in")
+
+  metadata  Json?     @db.JsonB
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  consents ConsentRecord[]
+  @@index([createdAt])
+  @@map("member_profiles")
+  @@schema("workspace_profiles")
+}
+
+// =============================================================================
+// ConsentRecord — append-only record of consent grants/withdrawals.
+// One row per (profile, kind, version, decision) event. Never mutated.
+// =============================================================================
+model ConsentRecord {
+  id        String        @id // cns_*
+  profileId String        @map("profile_id")
+  profile   MemberProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  /// @check(kind IN ('TERMS_OF_SERVICE','PRIVACY_POLICY','MARKETING_EMAIL','RISK_DISCLAIMER'))
+  kind    String
+  version String // doc version accepted, e.g. 'tos-2026-06'
+  granted Boolean
+
+  ipAddress String?  @map("ip_address")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([profileId, kind, createdAt])
+  @@map("consent_records")
+  @@schema("workspace_profiles")
+}

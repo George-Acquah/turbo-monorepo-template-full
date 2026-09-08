@@ -1,0 +1,464 @@
+/* ==========================================================
+   WORKSPACE DASHBOARD DESIGN TOKENS
+   For apps/members + the future apps/backoffice. Inspired by apps/landing's
+   OKLCH token language (indigo/violet/emerald, soft navy shadows) but a
+   distinct palette tuned for long working sessions over dense financial
+   data: cooler base, denser spacing, sidebar-aware surfaces, chart ramp.
+
+   Usage: `@import "@workspace/client-theme/tokens.css";` once, alongside
+   `@import "tailwindcss";`, in the consuming app's global stylesheet — same
+   pattern apps/landing uses for its own theme.css. Bind real font files via
+   `next/font/google` in the consuming app and point them at the
+   `--font-sans` / `--font-heading` / `--font-mono` variable names below
+   (mirrors how apps/landing wires `--font-manrope`).
+   ========================================================== */
+
+:root {
+  /* =======================================================
+     TYPOGRAPHY
+     Inter for UI/body text (large x-height, excellent at small sizes —
+     the standard choice for data-dense interfaces). Manrope for headings,
+     shared with apps/landing for brand cohesion. A monospace for tabular
+     numerals (prices, stats, ids) so figures align in columns.
+     ======================================================= */
+  --font-sans: var(--font-inter, 'Inter'), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-manrope, 'Manrope'), var(--font-sans);
+  --font-mono:
+    var(--font-mono-dashboard, 'IBM Plex Mono'), ui-monospace, 'SFMono-Regular', monospace;
+
+  /* =======================================================
+     SPACING & DENSITY
+     Base 4px scale. `--density-scale` is multiplied into component gap/
+     padding tokens (see client-ui-table's density modes) — 1 = comfortable,
+     smaller = compact, larger = relaxed. Toggle via [data-density] on any
+     ancestor.
+     ======================================================= */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --density-scale: 1;
+
+  /* =======================================================
+     RADIUS
+     Tighter than landing's 20px base — dashboards read as more precise/
+     structured than a marketing site, while staying rounded and soft.
+     ======================================================= */
+  /* Tightened from 12px → 10px: dashboards read as more precise/instrument-like
+     ("trading terminal") while staying rounded per the design language. */
+  --radius: 10px;
+  --radius-sm: calc(var(--radius) - 5px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 6px);
+  /* For a bento layout's largest cell only — at 2x2+ span, --radius-xl's corner reads
+     as too tight relative to the tile's size. Not a general-purpose "bigger" radius. */
+  --radius-2xl: calc(var(--radius) + 14px);
+
+  /* =======================================================
+     MOTION
+     ======================================================= */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* =======================================================
+     CORE SURFACES
+     ======================================================= */
+  --background: oklch(0.98 0.003 250);
+  --foreground: oklch(0.21 0.02 250);
+
+  --surface: oklch(1 0 0);
+  --surface-foreground: oklch(0.21 0.02 250);
+  --surface-2: oklch(0.96 0.004 250);
+
+  /* `card` and `popover` are required by the @workspace/client-ui-* components
+     (Card, DropdownMenu, Popover, Select, Command). Without them those parts
+     render with NO background at all. `popover` sits one step above `surface`
+     because it always floats over other content. */
+  --card: var(--surface);
+  --card-foreground: var(--surface-foreground);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.02 250);
+
+  /* =======================================================
+     THEME PREVIEW — fixed, non-theme-reactive swatches used by ThemeSwatch
+     (the theme picker UI) to show "what light/dark look like" side by side,
+     regardless of which theme is currently active. Every other token in this
+     file flips under `.dark`; these intentionally do not — that's the whole
+     point of a preview swatch, so they're declared once and never overridden.
+     ======================================================= */
+  --preview-light-bg: oklch(0.98 0.003 250);
+  --preview-light-bar-1: oklch(0.82 0.006 250);
+  --preview-light-bar-2: oklch(0.87 0.006 250);
+  --preview-light-bar-3: oklch(0.9 0.006 250);
+  --preview-dark-bg: oklch(0.15 0.016 258);
+  --preview-dark-bar-1: oklch(0.32 0.017 258);
+  --preview-dark-bar-2: oklch(0.26 0.017 258);
+  --preview-dark-bar-3: oklch(0.235 0.018 258);
+
+  /* =======================================================
+     GLASS
+     Frosted surfaces need three things together: a translucent fill, a
+     backdrop blur, and a hairline edge highlight to catch the light. Used by
+     the `.glass` / `.glass-strong` utilities below.
+     ======================================================= */
+  --glass-bg: oklch(1 0 0 / 0.72);
+  --glass-bg-strong: oklch(1 0 0 / 0.86);
+  --glass-border: oklch(0.21 0.02 250 / 0.08);
+  --glass-blur: 20px;
+
+  --sidebar: oklch(0.99 0.002 250);
+  --sidebar-foreground: oklch(0.21 0.02 250);
+  --sidebar-border: oklch(0.91 0.006 250);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: oklch(0.95 0.006 250);
+  --sidebar-accent-foreground: oklch(0.21 0.02 250);
+
+  --muted: oklch(0.96 0.004 250);
+  --muted-foreground: oklch(0.52 0.02 250);
+
+  --border: oklch(0.9 0.006 250);
+  --input: oklch(0.9 0.006 250);
+  --ring: var(--primary);
+
+  /* =======================================================
+     BRAND — a cooler blue/teal pair than landing's indigo/violet, so the
+     dashboard reads as a distinct product surface while staying in the
+     same OKLCH-driven system.
+     ======================================================= */
+  --primary: oklch(0.56 0.21 258);
+  --primary-foreground: oklch(1 0 0);
+
+  --secondary: oklch(0.7 0.13 200);
+  --secondary-foreground: oklch(0.15 0.02 200);
+
+  --accent: oklch(0.72 0.17 155);
+  --accent-foreground: oklch(0.16 0.02 155);
+
+  /* =======================================================
+     STATUS / SEMANTIC
+     ======================================================= */
+  --success: oklch(0.65 0.16 150);
+  --success-foreground: oklch(1 0 0);
+  --warning: oklch(0.8 0.15 85);
+  --warning-foreground: oklch(0.2 0.03 85);
+  --destructive: oklch(0.6 0.22 25);
+  --destructive-foreground: oklch(1 0 0);
+  --info: oklch(0.62 0.16 235);
+  --info-foreground: oklch(1 0 0);
+
+  /* =======================================================
+     CHARTS — fixed lightness/chroma, stepped hue, so every series reads as
+     the same "weight" regardless of color (categorical palette best
+     practice). 8 series before repeating.
+     ======================================================= */
+  --chart-1: oklch(0.62 0.2 255);
+  --chart-2: oklch(0.7 0.17 158);
+  --chart-3: oklch(0.78 0.16 85);
+  --chart-4: oklch(0.64 0.21 25);
+  --chart-5: oklch(0.64 0.18 300);
+  --chart-6: oklch(0.7 0.15 200);
+  --chart-7: oklch(0.6 0.16 340);
+  --chart-8: oklch(0.55 0.02 255);
+
+  /* Directional (financial) semantics — up = gain, down = loss. Reserved, like
+     status; used by the candlestick + any price-like view. Never a series hue. */
+  --chart-up: oklch(0.7 0.18 155);
+  --chart-down: oklch(0.64 0.21 25);
+
+  /* =======================================================
+     ELEVATION
+     Soft, two-layer, navy-tinted — same "premium" shadow language as
+     landing's --card-shadow, tuned slightly tighter for dense UI.
+     ======================================================= */
+  --elevation-1: 0 1px 2px rgba(15, 23, 42, 0.04), 0 2px 8px rgba(15, 23, 42, 0.04);
+  --elevation-2: 0 4px 12px rgba(15, 23, 42, 0.06), 0 12px 28px rgba(15, 23, 42, 0.08);
+  /* Hero-tile depth + a tinted glow, for bento-style layouts. Use on AT MOST one tile
+     per screen — this is emphasis, not a bigger default shadow. See `.tile-spotlight`. */
+  --elevation-3: 0 8px 24px -4px rgba(15, 23, 42, 0.1), 0 24px 48px -12px rgba(15, 23, 42, 0.16);
+  --elevation-glow: 0 0 0 1px var(--glass-border),
+    0 16px 40px -8px color-mix(in oklab, var(--primary) 14%, transparent);
+}
+
+/* ==========================================================
+   DARK MODE — primary mode for a "long working sessions" dashboard.
+   Elevation reads through surface lightness steps (background < surface <
+   surface-2), not shadows, which barely register on dark backgrounds.
+   ========================================================== */
+.dark {
+  /* Deeper + cooler than before (0.17→0.15, hue 250→258) for a richer, premium
+     "terminal" canvas. The surface ladder tightens up in step so panels still read
+     as distinctly lighter than the canvas (the detached-glass rule). */
+  --background: oklch(0.15 0.016 258);
+  --foreground: oklch(0.98 0.003 258);
+
+  --surface: oklch(0.205 0.017 258);
+  --surface-foreground: oklch(0.98 0.003 258);
+  --surface-2: oklch(0.255 0.017 258);
+
+  --card: var(--surface);
+  --card-foreground: var(--surface-foreground);
+  /* Floats above everything, so a clear step above --surface. */
+  --popover: oklch(0.235 0.018 258);
+  --popover-foreground: oklch(0.98 0.003 258);
+
+  /* On dark, the edge highlight is a light hairline — that's what sells glass.
+     Slightly stronger border for crisper panel edges on the deeper canvas. */
+  --glass-bg: oklch(0.225 0.018 258 / 0.6);
+  --glass-bg-strong: oklch(0.225 0.018 258 / 0.82);
+  --glass-border: oklch(1 0 0 / 0.1);
+
+  /* The sidebar is a floating panel on the canvas, so it must sit ABOVE
+     --background in lightness, not below it. Keeping it darker made it recede
+     into the canvas and the detached effect disappeared. Slightly below
+     --surface so it still reads as its own region. */
+  /* Sits above --background but a touch below --surface, so the sidebar reads as
+     its own floating panel on the canvas (not receding into it). */
+  --sidebar: oklch(0.185 0.016 258);
+  --sidebar-foreground: oklch(0.98 0.003 258);
+  --sidebar-border: oklch(0.28 0.016 258);
+  --sidebar-accent: oklch(0.26 0.017 258);
+  --sidebar-accent-foreground: oklch(0.98 0.003 258);
+
+  --muted: oklch(0.255 0.017 258);
+  --muted-foreground: oklch(0.77 0.02 258);
+
+  --border: oklch(0.3 0.016 258);
+  --input: oklch(0.3 0.016 258);
+
+  /* Punchier, more electric primary for a modern fintech read. */
+  --primary: oklch(0.7 0.19 258);
+  --primary-foreground: oklch(0.12 0.02 258);
+
+  --secondary: oklch(0.74 0.12 200);
+  --secondary-foreground: oklch(0.12 0.02 200);
+
+  --accent: oklch(0.76 0.16 155);
+  --accent-foreground: oklch(0.12 0.02 155);
+
+  --success: oklch(0.72 0.15 150);
+  --warning: oklch(0.83 0.14 85);
+  --destructive: oklch(0.68 0.2 25);
+  --info: oklch(0.72 0.14 235);
+
+  --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.24), 0 2px 8px rgba(0, 0, 0, 0.2);
+  --elevation-2: 0 4px 16px rgba(0, 0, 0, 0.32), 0 16px 32px rgba(0, 0, 0, 0.28);
+  /* Dark mode: a plain shadow barely registers, so the "raised" read comes from a
+     tinted glow instead — not just a darker version of --elevation-3's shadow. */
+  --elevation-3: 0 8px 24px -4px rgba(0, 0, 0, 0.4), 0 24px 56px -16px rgba(0, 0, 0, 0.5);
+  --elevation-glow: 0 0 0 1px var(--glass-border),
+    0 16px 40px -8px color-mix(in oklab, var(--primary) 32%, transparent);
+}
+
+/* ==========================================================
+   DENSITY MODES — toggle via [data-density="compact"|"comfortable"|
+   "relaxed"] on <html> or any container. Consumed by client-ui-table's
+   density prop and any other component that scales spacing off
+   --density-scale.
+   ========================================================== */
+[data-density='compact'] {
+  --density-scale: 0.75;
+}
+
+[data-density='relaxed'] {
+  --density-scale: 1.25;
+}
+
+/* ==========================================================
+   TAILWIND V4 THEME MAPPING — makes every token above usable as a
+   Tailwind utility (bg-primary, text-muted-foreground, rounded-lg, ...),
+   same mechanism apps/landing uses in globals.css.
+   ========================================================== */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-surface: var(--surface);
+  --color-surface-foreground: var(--surface-foreground);
+  --color-surface-2: var(--surface-2);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-glass-border: var(--glass-border);
+
+  --color-preview-light-bg: var(--preview-light-bg);
+  --color-preview-light-bar-1: var(--preview-light-bar-1);
+  --color-preview-light-bar-2: var(--preview-light-bar-2);
+  --color-preview-light-bar-3: var(--preview-light-bar-3);
+  --color-preview-dark-bg: var(--preview-dark-bg);
+  --color-preview-dark-bar-1: var(--preview-dark-bar-1);
+  --color-preview-dark-bar-2: var(--preview-dark-bar-2);
+  --color-preview-dark-bar-3: var(--preview-dark-bar-3);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+  --color-chart-8: var(--chart-8);
+  --color-chart-up: var(--chart-up);
+  --color-chart-down: var(--chart-down);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+
+  --font-sans: var(--font-sans);
+  --font-heading: var(--font-heading);
+  --font-mono: var(--font-mono);
+
+  /* `shadow-elevation-1` / `shadow-elevation-2`. Mostly a light-mode tool —
+     dark mode conveys elevation through the background→surface→surface-2
+     lightness steps instead, since shadows barely register on dark. */
+  --shadow-elevation-1: var(--elevation-1);
+  --shadow-elevation-2: var(--elevation-2);
+  --shadow-elevation-3: var(--elevation-3);
+  --shadow-elevation-glow: var(--elevation-glow);
+
+  /* `ease-out` / `ease-in-out` utilities. --ease-out is the Expo-out curve.
+     Durations stay plain custom properties — reference them as
+     `duration-(--duration-fast)`, which Tailwind resolves directly. */
+  --ease-out: var(--ease-out);
+  --ease-in-out: var(--ease-in-out);
+}
+
+/* ==========================================================
+   REDUCED MOTION — global opt-out. Anything relying on motion to convey
+   meaning must still be understandable with transitions collapsed.
+   ========================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================
+   GLASS UTILITIES
+   Frosted panel = translucent fill + backdrop blur + hairline edge light.
+   All three are needed; a blur over an opaque background does nothing, which
+   is the usual reason "glassmorphism" doesn't read.
+
+   Pair with `.ambient-canvas` on the page background — glass only looks like
+   glass when there is something behind it worth blurring.
+   ========================================================== */
+@utility glass {
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+  border: 1px solid var(--glass-border);
+}
+
+@utility glass-strong {
+  background-color: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+  border: 1px solid var(--glass-border);
+}
+
+/* Soft brand-coloured light sources behind the UI. Without something like this
+   the blur has nothing to work with and every "glass" surface reads as flat. */
+@utility ambient-canvas {
+  position: relative;
+  isolation: isolate;
+
+  &::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(55rem 38rem at 8% -6%, color-mix(in oklab, var(--primary) 30%, transparent), transparent 62%),
+      radial-gradient(45rem 34rem at 98% 8%, color-mix(in oklab, var(--accent) 24%, transparent), transparent 62%),
+      radial-gradient(48rem 36rem at 35% 55%, color-mix(in oklab, var(--secondary) 14%, transparent), transparent 60%),
+      radial-gradient(50rem 40rem at 80% 108%, color-mix(in oklab, var(--primary) 20%, transparent), transparent 62%);
+  }
+}
+
+/* A per-tile echo of `.ambient-canvas`, scoped to one element instead of the whole
+   page — for the single hero/emphasized tile in a bento-style grid. Pair with
+   `shadow-elevation-glow` and `rounded-2xl`. Use on AT MOST ONE tile per screen: this
+   is contrast/emphasis, not a default decoration — every tile getting a spotlight is
+   the same as no tile getting one. */
+@utility tile-spotlight {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -25% -25% auto auto;
+    width: 65%;
+    aspect-ratio: 1;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(
+      circle,
+      color-mix(in oklab, var(--primary) 26%, transparent),
+      transparent 70%
+    );
+    filter: blur(24px);
+  }
+}
+
+/* Respect the iOS/Android safe areas so the app-style bottom nav never sits
+   under the home indicator. */
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}

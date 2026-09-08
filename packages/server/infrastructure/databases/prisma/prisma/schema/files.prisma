@@ -1,0 +1,78 @@
+// =============================================================================
+// workspace_files — File records + upload intents
+//
+// FileRecord is the metadata row for an object stored in object storage (R2
+// default, S3/local adapters exist). The binary NEVER lives in Postgres — only
+// the pointer, checksum, scan status, and access class. Lesson/replay assets,
+// resources, receipt PDFs, avatars.
+//
+// FileUpload is the presigned-intent row: created before the client PUTs, then
+// finalised into a FileRecord on completion. Serving private assets is always
+// grant-checked and via short-TTL signed URLs (never stored in clients).
+// =============================================================================
+
+model FileRecord {
+  id              String  @id // file_*
+  ownerProfileId  String? @map("owner_profile_id")
+  uploadedByUserId String? @map("uploaded_by_user_id")
+
+  /// @check(storage_provider IN ('local','s3','r2'))
+  storageProvider String @map("storage_provider")
+  bucket          String
+  objectKey       String @map("object_key")
+
+  mimeType       String @map("mime_type")
+  /// @check(size_bytes >= 0)
+  sizeBytes      Int    @map("size_bytes")
+  checksumSha256 String? @map("checksum_sha256")
+
+  /// @check(visibility IN ('PUBLIC','PRIVATE','SIGNED'))
+  visibility String @default("PRIVATE")
+
+  /// @check(scan_status IN ('PENDING','CLEAN','INFECTED','SKIPPED'))
+  scanStatus String @default("PENDING") @map("scan_status")
+
+  /// @check(purpose IN ('LESSON_VIDEO','REPLAY_VIDEO','RESOURCE','RECEIPT_PDF','AVATAR','OTHER'))
+  purpose String @default("OTHER")
+
+  metadata  Json?     @db.JsonB // renditions/probe info (duration, dimensions) added by processor
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@unique([bucket, objectKey])
+  @@index([ownerProfileId])
+  @@index([purpose])
+  @@index([scanStatus])
+  @@map("file_records")
+  @@schema("workspace_files")
+  @@index([ownerProfileId, createdAt])
+}
+
+model FileUpload {
+  id        String  @id // ful_*
+  profileId String? @map("profile_id")
+  userId    String? @map("user_id")
+
+  expectedMime  String  @map("expected_mime")
+  expectedBytes Int?    @map("expected_bytes")
+  bucket        String
+  objectKey     String  @map("object_key")
+
+  /// @check(purpose IN ('LESSON_VIDEO','REPLAY_VIDEO','RESOURCE','RECEIPT_PDF','AVATAR','OTHER'))
+  purpose String @default("OTHER")
+
+  /// @check(status IN ('PENDING','UPLOADED','CONSUMED','EXPIRED','ABORTED'))
+  status String @default("PENDING")
+
+  fileId    String?  @map("file_id") // set once finalised into a FileRecord
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status, expiresAt])
+  @@index([profileId])
+  @@map("file_uploads")
+  @@schema("workspace_files")
+}

@@ -1,0 +1,37 @@
+# docker-compose.dev.yml
+#
+# Extends docker-compose.yml to run migrations before starting services.
+# Usage:
+#   docker compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up
+#
+# The migrate service reuses the API installer stage (has prisma + all deps),
+# runs prisma migrate deploy against the local postgres, then exits.
+# api & workers wait for it to finish before starting.
+
+services:
+  migrate:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.API
+      target: installer
+    container_name: workspace-migrate
+    working_dir: /repo
+    command: ["pnpm", "--filter=@workspace/prisma", "run", "migrate:deploy"]
+    env_file:
+      - ./.env.api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - workspace-network
+    restart: "no"
+
+  api:
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  workers:
+    depends_on:
+      migrate:
+        condition: service_completed_successfully

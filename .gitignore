@@ -1,0 +1,56 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Local env files
+.env
+.env.local
+.env.api
+.env.zap
+.env.development.local
+.env.test.local
+.env.production
+.env.staging
+.env.observability
+
+# Testing
+coverage
+
+# Turbo
+.turbo
+
+# Vercel
+.vercel
+
+# Build Outputs
+.next/
+out/
+build
+dist
+
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Continue
+.continue
+
+# Misc
+.DS_Store
+*.pem
+
+.antigravity
+.vscode
+
+# Local strategy and scratch docs
+packages/server/infrastructure/databases/prisma/generated/
+
+# ZAP scan output — point-in-time artifacts that change on every run, not
+# something to track. Findings that matter get written up in
+# docs/infrastructure/runbooks/ instead.
+docker/zap/reports/*.html

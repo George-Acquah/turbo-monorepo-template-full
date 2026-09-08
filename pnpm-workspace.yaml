@@ -1,0 +1,28 @@
+packages:
+  - 'apps/*'
+  - 'packages/configs/*'
+  - 'packages/server/*'
+  - 'packages/server/infrastructure/*'
+  - 'packages/server/auth/*'
+  - 'packages/server/auth/providers/*'
+  - 'packages/server/infrastructure/databases/*'
+  - 'packages/server/infrastructure/messaging/*'
+  - 'packages/server/infrastructure/persistence/*'
+  - 'packages/testing'
+  - 'modules/*'
+  - 'packages/client/*'
+  - 'packages/client/ui/*'
+allowBuilds:
+  '@firebase/util': true
+  '@parcel/watcher': false
+  '@prisma/engines': true
+  '@scarf/scarf': false
+  argon2: true
+  esbuild: true
+  msgpackr-extract: true
+  prisma: true
+  protobufjs: false
+  puppeteer: true
+  sharp: true
+  unrs-resolver: true
+  workerd: false

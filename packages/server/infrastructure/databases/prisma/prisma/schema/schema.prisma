@@ -1,0 +1,31 @@
+// Main schema file - datasource and generator configuration
+// Multi-schema approach for DDD bounded contexts.
+//
+// One PostgreSQL schema per bounded context. No cross-schema Prisma
+// relations — contexts reference each other by plain string IDs.
+//   auth           authentication: users, sessions, MFA, invitations
+//   identity       authorization: roles, permissions, API clients
+//   profiles       people as the business sees them (guest-checkout capable)
+//   notifications  notification CONFIG (templates, prefs) — records live in Mongo
+//   files          file records + upload intents (binaries in object storage)
+//   audit          append-only audit log
+//   outbox         transactional outbox, DLQ, saga state, idempotency
+//
+// TEMPLATE NOTE: add a new bounded context by (1) creating `<context>.prisma`
+// in this folder, (2) adding its `workspace_<context>` schema name below,
+// (3) adding a matching persistence adapter under
+// `packages/server/infrastructure/persistence/<context>` + ports under
+// `packages/server/ports/src/database/schema/<context>`.
+
+generator client {
+  provider   = "prisma-client-js"
+  output     = "../../generated/prisma"
+  engineType = "library"
+
+  previewFeatures = ["relationJoins", "views", "schemaEngineDriverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["workspace_auth", "workspace_identity", "workspace_profiles", "workspace_notifications", "workspace_files", "workspace_audit", "workspace_outbox"]
+}

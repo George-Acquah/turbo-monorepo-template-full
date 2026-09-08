@@ -1,0 +1,135 @@
+<mjml>
+  <mj-head>
+    <mj-title>Invoice {{invoiceNumber}}</mj-title>
+    <mj-attributes>
+      <mj-all font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" />
+      <mj-text font-size="13px" line-height="1.5" color="#111827" />
+      <mj-section background-color="#ffffff" padding="0" />
+      <mj-column padding="0" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#ffffff" width="700px">
+    <!-- Header -->
+    <mj-section border-bottom="3px solid #2563eb" padding="0 0 20px" padding-top="24px">
+      <mj-column width="60%">
+        <mj-text font-size="24px" font-weight="800" color="#2563eb" padding="6px 0 0">
+          Workspace
+        </mj-text>
+        <mj-text font-size="12px" color="#6b7280" padding="2px 0 0">Invoice</mj-text>
+        <mj-text font-size="11px" color="#6b7280" padding="2px 0 0" line-height="1.6">
+          hello@example.com
+        </mj-text>
+      </mj-column>
+      <mj-column width="40%">
+        <mj-text align="right" padding="0 0 6px">
+          <span style="font-size: 28px; font-weight: 800; color: #2563eb">INVOICE</span>
+        </mj-text>
+        <mj-text font-size="14px" font-weight="600" color="#374151" align="right" padding="0 0 6px">
+          {{invoiceNumber}}
+        </mj-text>
+        <mj-text align="right">
+          <span style="display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; background: {{statusBg}}; color: {{statusFg}}">{{status}}</span>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Info grid -->
+    <mj-section padding="24px 0 0">
+      <mj-column>
+        <mj-text font-size="10px" font-weight="700" text-transform="uppercase" letter-spacing="0.8px" color="#9ca3af" padding-bottom="8px">
+          Bill To
+        </mj-text>
+        <mj-table font-size="13px" cellpadding="5px 0">
+          <tr style="border-bottom: 1px solid #f3f4f6">
+            <td style="color: #6b7280">Name</td>
+            <td style="text-align: right; font-weight: 500">{{customerName}}</td>
+          </tr>
+          <tr>
+            <td style="color: #6b7280">Email</td>
+            <td style="text-align: right; font-weight: 500">{{customerEmail}}</td>
+          </tr>
+        </mj-table>
+      </mj-column>
+      <mj-column>
+        <mj-text font-size="10px" font-weight="700" text-transform="uppercase" letter-spacing="0.8px" color="#9ca3af" padding-bottom="8px">
+          Invoice Details
+        </mj-text>
+        <mj-table font-size="13px" cellpadding="5px 0">
+          <tr style="border-bottom: 1px solid #f3f4f6">
+            <td style="color: #6b7280">Order ID</td>
+            <td style="text-align: right; font-weight: 500">{{orderId}}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #f3f4f6">
+            <td style="color: #6b7280">Issued</td>
+            <td style="text-align: right; font-weight: 500">{{issuedAt}}</td>
+          </tr>
+          {{#if dueDate}}
+          <tr>
+            <td style="color: #6b7280">Due Date</td>
+            <td style="text-align: right; font-weight: 500">{{dueDate}}</td>
+          </tr>
+          {{/if}}
+        </mj-table>
+      </mj-column>
+    </mj-section>
+
+    <!-- Items table -->
+    <mj-section padding="16px 0 0">
+      <mj-column>
+        <mj-table font-size="13px">
+          <tr style="background: #2563eb">
+            <th style="padding: 9px 12px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: #ffffff; text-align: left">Item</th>
+            <th style="padding: 9px 12px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: #ffffff; text-align: right">Amount</th>
+          </tr>
+          {{#each items}}
+          <tr style="border-bottom: 1px solid #e5e7eb">
+            <td style="padding: 9px 12px; vertical-align: top">{{name}}</td>
+            <td style="padding: 9px 12px; vertical-align: top; text-align: right; font-weight: 500">{{../currency}} {{formatAmount amount}}</td>
+          </tr>
+          {{/each}}
+        </mj-table>
+      </mj-column>
+    </mj-section>
+
+    <!-- Summary -->
+    <mj-section padding="16px 0 0">
+      <mj-column></mj-column>
+      <mj-column>
+        <mj-table font-size="13px" cellpadding="5px 0">
+          <tr style="border-bottom: 1px solid #f3f4f6">
+            <td style="color: #6b7280">Subtotal</td>
+            <td style="text-align: right; font-weight: 500">{{currency}} {{formatAmount subtotal}}</td>
+          </tr>
+          {{#if (gt discountAmount 0)}}
+          <tr style="border-bottom: 1px solid #f3f4f6">
+            <td style="color: #6b7280">Discount</td>
+            <td style="text-align: right; font-weight: 500; color: #166534">−{{currency}} {{formatAmount discountAmount}}</td>
+          </tr>
+          {{/if}}
+          <tr>
+            <td style="color: #6b7280">Amount Paid</td>
+            <td style="text-align: right; font-weight: 500">{{currency}} {{formatAmount paidAmount}}</td>
+          </tr>
+          <tr style="border-top: 2px solid #111827">
+            <td style="padding-top: 10px; font-weight: 700; color: #111827">Total Due</td>
+            <td style="padding-top: 10px; text-align: right; font-size: 20px; font-weight: 800; color: #111827">{{currency}} {{formatAmount amountMinor}}</td>
+          </tr>
+        </mj-table>
+      </mj-column>
+    </mj-section>
+
+    <!-- Footer -->
+    <mj-section border-top="1px solid #e5e7eb" padding="14px 0 0">
+      <mj-column>
+        <mj-text font-size="11px" color="#9ca3af">
+          This is a computer-generated invoice and requires no signature.
+        </mj-text>
+      </mj-column>
+      <mj-column>
+        <mj-text align="right">
+          <span style="font-size: 13px; font-weight: 700; color: #2563eb">Workspace</span>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

@@ -1,0 +1,24 @@
+node_modules
+**/node_modules
+.git
+**/dist
+**/build
+# Next.js dev-server cache — grows unbounded while `next dev` runs (observed
+# apps/landing+members+backoffice's .next/dev/cache/turbopack/* alone adding
+# several GB), and Dockerfile.API/Dockerfile.Workers' pruner stage discards
+# it anyway (turbo prune only keeps what the target app actually needs). Not
+# excluding this means every build transfers gigabytes of irrelevant cache to
+# the daemon before pruning ever gets a chance to drop it.
+**/.next
+**/.turbo
+
+# Secrets must never enter the build context — Dockerfile.API/Dockerfile.Workers
+# both `COPY . .`, so anything matched here would otherwise be baked into the
+# image layers. Runtime config comes from the platform's injected env
+# (loadEnvFiles uses override:false, so process.env always wins anyway).
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example

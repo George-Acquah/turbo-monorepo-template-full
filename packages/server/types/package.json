@@ -1,0 +1,41 @@
+{
+  "name": "@workspace/types",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "tsdown",
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "check:event-schema": "node ./scripts/check-event-schema.mjs",
+    "check:event-schema:ci": "node ./scripts/check-event-schema.mjs --ci",
+    "dev": "tsdown --watch",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@workspace/constants": "workspace:*"
+  },
+  "devDependencies": {
+    "@workspace/eslint": "workspace:*",
+    "@workspace/typescript": "workspace:*",
+    "@types/express": "^5.0.0",
+    "@types/node": "^24.10.0",
+    "eslint": "^9.39.1",
+    "prettier": "^3.8.4",
+    "tsdown": "^0.20.3",
+    "typescript": "5.9.3"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^11.1.0",
+    "@nestjs/core": "^11.1.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.0"
+  },
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./contracts": "./dist/contracts.mjs",
+    "./events": "./dist/events.mjs",
+    "./express": "./dist/express.mjs",
+    "./metadata": "./dist/metadata.mjs",
+    "./package.json": "./package.json"
+  }
+}

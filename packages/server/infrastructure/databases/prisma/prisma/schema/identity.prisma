@@ -1,0 +1,185 @@
+// =============================================================================
+// workspace_identity — Authorization domain (staff/admin RBAC + machine clients)
+//
+// Answers: "What may this user do?"
+//
+// Owns: roles, permissions, RBAC assignments, API client credentials.
+//
+// Single-tenant: no organization/school scoping (that was orvex ERP machinery).
+// TradingPro roles are platform-level only:
+//   platform_admin | platform_support | platform_auditor | mentor
+// MEMBERS get NO identity role — their *content* access is authorized by
+// workspace_memberships.AccessGrant, never by RBAC.
+//
+// Depends on: workspace_auth.User referenced as userId (plain string, no FK).
+// Identity mutations (role grants/revokes, key lifecycle) are recorded in
+// workspace_audit.AuditLog — this schema no longer keeps its own audit table.
+// =============================================================================
+
+// =============================================================================
+// Permission — granular, immutable permission key. Seeded at startup.
+// Key format: "<resource>:<action>"  e.g. "catalog:write", "refund:approve".
+// =============================================================================
+model Permission {
+  id String @id
+
+  key      String @unique // "refund:approve" — canonical identifier
+  resource String // "refund"  (from resources.constants.ts)
+  action   String // "approve" (from actions.constants.ts)
+
+  description String?
+
+  isSystem Boolean @default(true) @map("is_system")
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  rolePermissions RolePermission[]
+
+  @@index([resource])
+  @@index([isActive])
+  @@map("permissions")
+  @@schema("workspace_identity")
+}
+
+// =============================================================================
+// Role — named collection of permissions. Platform-level, seeded.
+// The crown-jewel permissions (refund:approve, catalog:write, access:revoke,
+// user:impersonate) are assigned only to platform_admin.
+// =============================================================================
+model Role {
+  id String @id
+
+  key  String @unique // 'platform_admin' | 'platform_support' | 'platform_auditor' | 'mentor'
+  name String // "Platform Admin" — display name
+
+  description String?
+
+  isSystem Boolean @default(true) @map("is_system")
+  isActive Boolean @default(true) @map("is_active")
+
+  createdByUserId String? @map("created_by_user_id")
+  metadata        Json?   @db.JsonB
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  rolePermissions RolePermission[]
+  userRoles       UserRole[]
+
+  @@index([isActive])
+  @@map("roles")
+  @@schema("workspace_identity")
+}
+
+// =============================================================================
+// RolePermission — junction: which permissions a role grants.
+// =============================================================================
+model RolePermission {
+  roleId String @map("role_id")
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  permissionId String     @map("permission_id")
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  createdByUserId String?  @map("created_by_user_id")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+  @@map("role_permissions")
+  @@schema("workspace_identity")
+}
+
+// =============================================================================
+// UserRole — assigns a Role to a staff/admin User. Source of truth for authz.
+// A row is "active" when revokedAt IS NULL AND (expiresAt IS NULL OR expiresAt > NOW()).
+// roleKey is denormalised so JWT claims can be minted without a Role join.
+// =============================================================================
+model UserRole {
+  id String @id
+
+  userId String @map("user_id") // workspace_auth.users.id — string ref, no FK
+  roleId String @map("role_id")
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  roleKey String @map("role_key") // denormalised copy of Role.key for fast token minting
+
+  grantedBy String?   @map("granted_by") // userId of admin who granted
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz(6)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(6)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([userId, roleId])
+  @@index([userId, revokedAt]) // hottest path — permission resolution
+  @@index([roleId])
+  @@map("user_roles")
+  @@schema("workspace_identity")
+}
+
+// =============================================================================
+// ApiClient — service accounts for machine-to-machine access (members-app
+// server, webhook relays, future integrations). clientSecretHash backs the
+// client_credentials flow. Each client can mint multiple ApiKeys.
+// =============================================================================
+model ApiClient {
+  id String @id
+
+  name        String @unique
+  description String?
+
+  clientId         String @unique @map("client_id")
+  clientSecretHash String @map("client_secret_hash")
+
+  /// @check(status IN ('ACTIVE','REVOKED','SUSPENDED'))
+  status String @default("ACTIVE")
+
+  createdByUserId String?   @map("created_by_user_id")
+  lastUsedAt      DateTime? @map("last_used_at") @db.Timestamptz(6)
+
+  metadata  Json?     @db.JsonB
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  apiKeys ApiKey[]
+  @@index([status])
+  @@map("api_clients")
+  @@schema("workspace_identity")
+}
+
+// =============================================================================
+// ApiKey — hashed API key belonging to an ApiClient. The raw key is shown once
+// at creation and never stored. keyPrefix lets humans identify a key. scopes
+// (permission keys) restrict what the key can do (empty = all client perms).
+// =============================================================================
+model ApiKey {
+  id String @id
+
+  apiClientId String    @map("api_client_id")
+  apiClient   ApiClient @relation(fields: [apiClientId], references: [id], onDelete: Cascade)
+
+  name      String
+  keyPrefix String @map("key_prefix") // first chars of the raw key — safe to display
+  keyHash   String @unique @map("key_hash")
+
+  /// @check(status IN ('ACTIVE','REVOKED','EXPIRED'))
+  status String @default("ACTIVE")
+
+  scopes String[] @default([])
+
+  expiresAt  DateTime? @map("expires_at") @db.Timestamptz(6)
+  lastUsedAt DateTime? @map("last_used_at") @db.Timestamptz(6)
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz(6)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([apiClientId])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("api_keys")
+  @@schema("workspace_identity")
+}

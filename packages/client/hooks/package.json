@@ -1,0 +1,30 @@
+{
+  "name": "@workspace/client-hooks",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "tsdown",
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "dev": "tsdown --watch",
+    "lint": "eslint src --ext .ts"
+  },
+  "peerDependencies": {
+    "react": "^19.2.0"
+  },
+  "dependencies": {
+    "@workspace/client-types": "workspace:*"
+  },
+  "devDependencies": {
+    "@workspace/typescript": "workspace:*",
+    "@workspace/eslint": "workspace:*",
+    "@types/node": "^24.10.0",
+    "@types/react": "^19.2.0",
+    "eslint": "^9.39.1",
+    "tsdown": "^0.20.3"
+  },
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  }
+}

@@ -1,0 +1,99 @@
+# syntax=docker/dockerfile:1
+# ------------------------------------------------------
+# 1. Base Image
+# ------------------------------------------------------
+FROM node:22-slim AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+
+RUN corepack enable && corepack prepare pnpm@11.8.0 --activate
+WORKDIR /repo
+
+# ------------------------------------------------------
+# 2. Prune (The Secret Sauce)
+# ------------------------------------------------------
+FROM base AS pruner
+# Use pnpm dlx to ensure we use a compatible version without global pollution
+COPY . .
+# @workspace/seed is included alongside @workspace/api (turbo prune accepts multiple
+# scopes) even though the API doesn't depend on it — Railway's preDeployCommand
+# runs `pnpm run db:seed` (SEED_AFTER_MIGRATE-gated) from inside this same image,
+# on the private network, so the seed package's source and deps must be present in
+# the pruned output or that command fails with "package not found".
+RUN pnpm dlx turbo prune @workspace/api @workspace/seed --docker --out-dir=out
+
+# ------------------------------------------------------
+# 3. Installer
+# ------------------------------------------------------
+FROM base AS installer
+COPY --from=pruner /repo/out/json/ .
+COPY --from=pruner /repo/out/pnpm-lock.yaml ./pnpm-lock.yaml
+# turbo prune --docker's out/json/ only preserves each workspace's
+# package.json (by design, for install-layer caching) — root dotfiles like
+# .npmrc aren't part of that set, so without this explicit copy pnpm install
+# below silently runs with zero of the repo's network/registry tuning.
+COPY .npmrc ./.npmrc
+
+# 1. Install dependencies (fixing the lockfile mismatch)
+# Cache mount for pnpm's content-addressable store (see `pnpm store path`,
+# /pnpm/store given this stage's PNPM_HOME=/pnpm): persists across builds on
+# the same builder, so a retry (or the next unrelated build using this same
+# Dockerfile) only downloads packages that aren't already cached instead of
+# all ~1,150 from zero every time — see .npmrc's header comment for the
+# network-timeout issue this was added alongside.
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm install --no-frozen-lockfile
+
+# 2. Copy the actual source code
+COPY --from=pruner /repo/out/full/ .
+COPY --from=pruner /repo/turbo.json ./turbo.json
+# 3. Generate Prisma Client 
+# We target the database package specifically to ensure the types are ready
+ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy?schema=public"
+
+RUN pnpm --filter=@workspace/prisma run prisma:generate
+# 4. Build the project
+RUN pnpm run build --filter=@workspace/api
+
+# ------------------------------------------------------
+# 4. Production Runner
+# ------------------------------------------------------
+FROM node:22-slim AS runner
+
+# 1. Setup Environment
+ENV PNPM_HOME="/pnpm"
+ENV COREPACK_HOME="/app/.corepack"
+ENV PATH="$PNPM_HOME:$PATH"
+
+# 2. Install runtime dependencies & Setup User
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/* && \
+    addgroup --system app && adduser --system --ingroup app app
+
+WORKDIR /app 
+
+# 3. Pre-create directories with correct ownership
+# This prevents the slow recursive chown later
+RUN mkdir -p /app /app/.corepack /pnpm && chown -R app:app /app /pnpm
+
+# 4. Enable Corepack as the correct user
+RUN corepack enable && corepack prepare pnpm@11.8.0 --activate
+
+# 5. Copy everything with ownership set DURING the copy
+# This is infinitely faster than running chown -R afterwards
+COPY --from=installer --chown=app:app /repo ./
+
+# Switch to app user
+USER app
+
+ENV NODE_ENV=production
+
+# 6. Execute
+# Invoke the compiled entrypoint directly rather than `pnpm --filter=@workspace/api
+# run start:prod` (which is just `node dist/main` anyway, per apps/api/package.json).
+# pnpm re-verifies the whole lockfile against the registry's supply-chain policy on
+# EVERY invocation, including a plain `run` — confirmed directly (docker/docker-
+# compose.zap.yml's ZAP stack build hit this: a container start hung for minutes
+# re-resolving all 61 workspace projects over the network before ever reaching
+# `dist/main`). A production container's cold start (and every restart) has no
+# business depending on npm-registry reachability at all.
+CMD ["node", "apps/api/dist/main.js"]

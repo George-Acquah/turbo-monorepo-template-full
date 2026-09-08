@@ -1,0 +1,11 @@
+{
+  "//": "Root tsconfig — intentionally minimal. Each package/app extends a preset from @workspace/typescript (base.json / nestjs.json / nextjs.json / react-library.json) and owns its own compilation. This file exists so editors and the ESLint import resolver have a project root to anchor to.",
+  "files": [],
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "target": "ES2022",
+    "strict": true,
+    "skipLibCheck": true
+  }
+}

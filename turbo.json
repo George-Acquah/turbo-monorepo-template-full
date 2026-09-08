@@ -1,0 +1,47 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "ui": "tui",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
+      "env": ["NEXT_PUBLIC_SITE_URL", "NEXT_PUBLIC_API_URL", "NEXT_PUBLIC_MEMBERS_URL", "NEXT_PUBLIC_TURNSTILE_SITE_KEY"],
+      "passThroughEnv": [
+        "ORIGIN_AUTH_SECRET",
+        "COOKIE_DOMAIN",
+        "RESEND_API_KEY",
+        "RECEIVER_EMAIL"
+      ]
+    },
+    "@workspace/prisma#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": ["dist/**", "generated/**"]
+    },
+    "lint": {
+      "dependsOn": ["^lint"]
+    },
+    "check-types": {
+      "dependsOn": ["^check-types"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "src/**/*.ts",
+        "src/**/*.spec.ts",
+        "src/**/*.test.ts",
+        "src/test/**/*",
+        "test/**/*",
+        "jest.config.*",
+        "tsconfig.test.json",
+        "package.json"
+      ],
+      "outputs": ["coverage/**"]
+    }
+  }
+}

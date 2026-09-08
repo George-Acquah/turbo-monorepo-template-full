@@ -1,0 +1,26 @@
+import { Controller, Get, Inject, ServiceUnavailableException } from '@nestjs/common';
+import {
+  DATABASE_HEALTH_TOKEN,
+  type DatabaseHealthPort,
+  type DatabaseHealthReport,
+} from '@workspace/ports';
+
+@Controller('health')
+export class HealthController {
+  constructor(
+    @Inject(DATABASE_HEALTH_TOKEN)
+    private readonly databaseHealth: DatabaseHealthPort,
+  ) {}
+
+  @Get()
+  async check(): Promise<{ status: 'ok'; databases: DatabaseHealthReport[] }> {
+    const databases = await this.databaseHealth.checkAll();
+    const healthy = databases.every((db) => db.healthy);
+
+    if (!healthy) {
+      throw new ServiceUnavailableException({ status: 'degraded', databases });
+    }
+
+    return { status: 'ok', databases };
+  }
+}

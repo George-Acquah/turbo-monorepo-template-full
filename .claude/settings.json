@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(pnpm build)",
+      "Bash(pnpm run build)",
+      "Bash(pnpm check-types)",
+      "Bash(pnpm run check-types)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm run lint)",
+      "Bash(pnpm lint:fix)",
+      "Bash(pnpm run lint:fix)",
+      "Bash(pnpm test)",
+      "Bash(pnpm run test)",
+      "Bash(pnpm test:ci)",
+      "Bash(pnpm run test:ci)",
+      "Bash(pnpm test:affected)",
+      "Bash(pnpm run test:affected)",
+      "Bash(pnpm -r *)",
+      "Bash(turbo run build)",
+      "Bash(turbo run lint)",
+      "Bash(turbo run check-types)",
+      "Bash(turbo run test)",
+      "Bash(prisma migrate dev)",
+      "Bash(prisma migrate deploy)",
+      "Bash(prisma migrate reset)",
+      "Bash(prisma db push --force*)",
+      "Bash(pnpm --filter @workspace/prisma prisma:reset)",
+      "Bash(pnpm --filter @workspace/prisma prisma:migrate:dev)",
+      "Bash(pnpm --filter @workspace/prisma migrate:deploy)",
+      "Bash(pnpm run prisma:reset)",
+      "Bash(pnpm run prisma:migrate:dev)",
+      "Bash(pnpm run migrate:deploy)",
+      "Bash(pnpm prisma:reset)",
+      "Bash(pnpm prisma:migrate:dev)",
+      "Bash(pnpm migrate:deploy)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(rm -rf*)",
+      "Bash(rm -fr*)"
+    ]
+  }
+}

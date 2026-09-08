@@ -1,0 +1,39 @@
+name: Prepend Issue Key to PR Title
+
+on:
+  pull_request:
+    types: [opened, reopened, edited]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  pr-title:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepend issue key to PR title
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branch = context.payload.pull_request.head.ref;
+            const title = context.payload.pull_request.title;
+
+            const issueKey = branch.match(/([A-Z]{2,}-\d+)/)?.[1];
+            if (!issueKey) {
+              core.info(`No issue key found in branch: ${branch}`);
+              return;
+            }
+
+            if (title.startsWith(issueKey)) {
+              core.info('PR title already has the issue key, skipping.');
+              return;
+            }
+
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              title: `${issueKey} ${title}`,
+            });
+
+            core.info(`Updated PR title to: ${issueKey} ${title}`);

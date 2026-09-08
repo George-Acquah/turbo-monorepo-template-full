@@ -1,0 +1,61 @@
+{
+  "name": "@workspace/realtime",
+  "version": "0.0.0",
+  "description": "Server-Sent Events (SSE) real-time streaming for workspace — bridges Redis pub/sub to browser clients.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "tsdown",
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "dev": "tsdown --watch",
+    "lint": "eslint src --ext .ts",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --passWithNoTests"
+  },
+  "dependencies": {
+    "@workspace/ports": "workspace:*",
+    "@workspace/constants": "workspace:*",
+    "@workspace/decorators": "workspace:*",
+    "@workspace/guards": "workspace:*",
+    "@workspace/types": "workspace:*",
+    "rxjs": "^7.8.1"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/core": "^11.0.1"
+  },
+  "devDependencies": {
+    "@workspace/eslint": "workspace:*",
+    "@workspace/typescript": "workspace:*",
+    "@workspace/testing": "workspace:*",
+    "@jest/globals": "^30.0.0",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.10.0",
+    "jest": "^30.0.0",
+    "ts-jest": "^29.2.5",
+    "tsdown": "^0.20.3",
+    "eslint": "^9.39.1"
+  },
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "jest": {
+    "extensionsToTreatAsEsm": [
+      ".ts"
+    ],
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    },
+    "transform": {
+      "^.+\\.ts$": [
+        "ts-jest",
+        {
+          "useESM": true
+        }
+      ]
+    },
+    "rootDir": ".",
+    "testRegex": "test/.*\\.spec\\.ts$",
+    "testEnvironment": "node"
+  }
+}
